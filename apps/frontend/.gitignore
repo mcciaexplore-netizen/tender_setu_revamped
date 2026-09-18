@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Production builds
+dist/
+.output/
+.tanstack/
+.wrangler/
+
+# Env & local configs
+.env
+.env.local
+.env.production
+.env.development
+
+# Logs & temp files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+*.local
+
+# Ignore the backend subfolder to keep this repository strictly for the Frontend
+backend/

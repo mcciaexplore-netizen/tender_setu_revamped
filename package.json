@@ -1,0 +1,21 @@
+{
+  "name": "tendermatch",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=@tendermatch/shared-types && npm run build --workspace=@tendermatch/backend && npm run build --workspace=@tendermatch/frontend && node copy-frontend-dist.cjs",
+    "lint": "npm run lint --workspace=@tendermatch/frontend",
+    "test": "npm run test --workspace=@tendermatch/backend",
+    "start": "npm run start --workspace=@tendermatch/backend",
+    "dev:backend": "npm run dev --workspace=@tendermatch/backend",
+    "dev:frontend": "npm run dev --workspace=@tendermatch/frontend",
+    "migrate:up": "npm run migrate:up --workspace=@tendermatch/backend"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
