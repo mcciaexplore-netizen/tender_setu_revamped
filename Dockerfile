@@ -9,6 +9,7 @@ RUN npm install
 
 COPY apps ./apps
 COPY packages ./packages
+COPY copy-frontend-dist.cjs ./
 RUN npm run build
 
 FROM node:22-bookworm-slim AS runtime
