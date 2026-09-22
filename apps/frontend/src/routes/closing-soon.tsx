@@ -34,7 +34,7 @@ function ClosingSoonPage() {
           const realTenderId =
             parts.length > 1
               ? parts[parts.length - 1].trim()
-              : m.tender.id.substring(0, 8).toUpperCase();
+              : "Unavailable";
           const orgMatch = m.tender.raw_text?.match(/Organisation:\s*([^\n]+)/);
           const rawOrg = orgMatch ? orgMatch[1].trim() : "";
           const cleanOrg = rawOrg.split("||")[0].trim();
@@ -44,11 +44,11 @@ function ClosingSoonPage() {
             title: rawTitle,
             tenderNumber: realTenderId,
             source: m.tender.source,
-            issuingAuthority: cleanOrg || m.tender.source || "Public Authority",
+            issuingAuthority: cleanOrg || m.tender.source || "Unavailable",
             sector: m.tender.sector,
-            contractValue: parseFloat(m.tender.value),
+            contractValue: Number.isFinite(Number(m.tender.value)) ? Number(m.tender.value) : null,
             deadline: m.tender.deadline,
-            state: "All India",
+            state: m.tender.state || "Unavailable",
             sourceStatus: m.tender.source_status ?? "needs_review",
             scopeOfWork: m.tender.raw_text || "",
             eligibility: {
@@ -76,8 +76,10 @@ function ClosingSoonPage() {
   }, [navigate]);
 
   const list = tendersList.filter((t) => {
-    const daysLeft =
-      (new Date(t.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    if (!t.deadline) return false;
+    const deadline = new Date(t.deadline).getTime();
+    if (!Number.isFinite(deadline)) return false;
+    const daysLeft = (deadline - Date.now()) / (1000 * 60 * 60 * 24);
     return daysLeft > 0 && daysLeft <= 5;
   });
 

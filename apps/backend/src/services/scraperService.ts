@@ -63,6 +63,10 @@ export async function runLiveScraper(): Promise<{ success: boolean; count: numbe
       }
     }
 
+    if (!browser) {
+      throw new Error('Live scraping is unavailable because no Chromium browser could be launched. Configure CHROME_PATH or use the production image.');
+    }
+
     // === SECTION 1: CRAWL GeM CPPP PORTAL ===
     try {
       console.log('\nStep 1: Navigating to live GeM CPPP Portal...');

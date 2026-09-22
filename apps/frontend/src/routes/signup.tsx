@@ -74,7 +74,22 @@ function SignupPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
+      // Parse the response defensively. If the API URL points at a different
+      // web server, it may return an HTML error page; exposing the raw JSON
+      // parser exception makes that configuration problem look like a signup
+      // validation failure.
+      const contentType = res.headers.get("content-type") ?? "";
+      const raw = await res.text();
+      let data: { token?: string; companyId?: string; error?: string } = {};
+      if (contentType.includes("application/json")) {
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          throw new Error("The server returned an invalid response. Please check the API URL.");
+        }
+      } else {
+        throw new Error("The signup service is unavailable at this address. Please check the API URL.");
+      }
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to sign up");
@@ -156,8 +171,7 @@ function SignupPage() {
                 <span className="text-primary">competitive edge</span>.
               </h2>
               <p className="text-xl text-slate-400 leading-relaxed">
-                Fill in your details to instantly match with 29,000+ government
-                portals.
+                Fill in your details to match against currently available tender sources.
               </p>
             </div>
 
@@ -465,7 +479,7 @@ function SignupPage() {
                     </h2>
                     <p className="text-sm text-slate-500 max-w-xs mx-auto leading-relaxed">
                       {loading
-                        ? "Scanning 29,000+ live portals for matches."
+                        ? "Scanning available tender sources for matches."
                         : "Opening your tender intelligence command center."}
                     </p>
                   </div>

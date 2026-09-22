@@ -181,13 +181,45 @@ export async function extractTenderData(
           `Missing fields: ${missingFields.join(', ') || 'none'}; confidence: ${parsedData.confidence_score}`,
           source, JSON.stringify(parsedData)]
       );
+
+      // A live source record with a trustworthy title is still useful to the
+      // discovery feed. Keep it explicitly marked for manual review rather
+      // than hiding it or filling missing fields with guesses.
+      let partialTender: any = null;
+      if (parsedData.title) {
+        const existing = await query(
+          `SELECT * FROM tenders WHERE LOWER(title) = LOWER($1) OR raw_text = $2 LIMIT 1`,
+          [parsedData.title, rawText],
+        );
+        if (existing.rows.length === 0) {
+          const partialResult = await query(`
+            INSERT INTO tenders (title, source, sector, value, deadline, eligibility, certifications, personnel_requirements, raw_text, confidence_score, url, source_status, needs_manual_review)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NULL, 'needs_review', TRUE)
+            RETURNING *
+          `, [
+            parsedData.title,
+            source,
+            parsedData.sector,
+            parsedData.value,
+            parsedData.deadline,
+            parsedData.eligibility,
+            parsedData.certifications,
+            parsedData.personnel_requirements,
+            rawText,
+            parsedData.confidence_score,
+          ]);
+          partialTender = partialResult.rows[0] ?? null;
+        } else {
+          partialTender = existing.rows[0];
+        }
+      }
       
       await query(
         `INSERT INTO ingestion_logs (source, status, error_message) VALUES ($1, $2, $3)`,
-        [source, 'failure', `Missing fields: ${missingFields.join(', ')} or low confidence (${parsedData.confidence_score})`]
+        [source, 'failure', `Stored for manual review; missing fields: ${missingFields.join(', ') || 'none'} or low confidence (${parsedData.confidence_score})`]
       );
-
-      return { success: false, message: 'Sent to review queue due to missing fields or low confidence.' };
+      
+      return { success: Boolean(parsedData.title), tender: partialTender, message: 'Stored as live data requiring manual review.' };
     }
 
     // This point is only reached when title, sector and deadline are present.

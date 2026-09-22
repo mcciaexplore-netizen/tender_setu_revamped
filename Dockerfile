@@ -17,6 +17,14 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Puppeteer-core needs a real browser in the production image. Chromium is
+# available from Debian's free repositories; no paid API or external service
+# is required.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends chromium ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+ENV CHROME_PATH=/usr/bin/chromium
+
 COPY package.json ./
 COPY apps/backend/package.json apps/backend/package.json
 COPY packages/shared-types/package.json packages/shared-types/package.json

@@ -54,7 +54,19 @@ function Dashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        throw new Error("Sync failed. Please try again.");
+        const retryAfter = res.headers.get("retry-after");
+        let message = "Sync failed. Please try again.";
+        try {
+          const payload = await res.json();
+          if (typeof payload.error === "string") message = payload.error;
+        } catch {
+          // Keep the generic message when a proxy returns a non-JSON error.
+        }
+        if (res.status === 429 && retryAfter) {
+          const minutes = Math.max(1, Math.ceil(Number(retryAfter) / 60));
+          message = `${message} Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+        }
+        throw new Error(message);
       }
 
       const matchesRes = await fetch(

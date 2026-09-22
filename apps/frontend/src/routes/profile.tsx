@@ -450,9 +450,8 @@ function ProfilePage() {
                 ))}
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
-                Document upload is available through the secured
-                company-document API; a document-management screen will expose
-                it after the unified frontend build is verified.
+                Documents are stored securely in the company vault and can be
+                downloaded only by authenticated members of this company.
               </p>
             </>
           )}
