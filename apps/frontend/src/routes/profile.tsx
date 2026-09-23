@@ -736,10 +736,14 @@ const AVAILABLE_SECTORS = [
   "IT",
   "Defence",
   "Construction",
+  "Healthcare",
   "Services",
   "Transport",
   "Education",
   "Manufacturing",
+  "Energy",
+  "Agriculture",
+  "Other",
 ];
 const AVAILABLE_CERTIFICATIONS = ["ISO 9001", "MSME", "ISO 27001", "ISO 14001"];
 

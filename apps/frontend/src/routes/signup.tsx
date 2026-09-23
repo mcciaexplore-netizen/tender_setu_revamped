@@ -330,6 +330,9 @@ function SignupPage() {
                     "Defence",
                     "Education",
                     "Transport",
+                    "Energy",
+                    "Agriculture",
+                    "Other",
                   ].map((sector) => (
                     <button
                       key={sector}
