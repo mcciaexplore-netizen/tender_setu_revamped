@@ -11,7 +11,9 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const { activeFilter, setFilter, savedTenders, appliedTenders } = useStore();
+  const { activeFilter, setFilter } = useStore();
+  const [savedCount, setSavedCount] = useState(0);
+  const [appliedCount, setAppliedCount] = useState(0);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -151,6 +153,17 @@ function Dashboard() {
           }
         }
 
+        const [savedRes, appliedRes] = await Promise.all([
+          fetch(`${API_URL}/api/matches/saved`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${API_URL}/api/matches/applied`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        if (savedRes.ok) setSavedCount((await savedRes.json()).length);
+        if (appliedRes.ok) setAppliedCount((await appliedRes.json()).length);
+
         const res = await fetch(
           `${API_URL}/api/matches${matchQuery ? `?${matchQuery}` : ""}`,
           {
@@ -260,8 +273,8 @@ function Dashboard() {
     },
     {
       label: "Saved tenders",
-      value: savedTenders.size.toString(),
-      sub: `${appliedTenders.size} applied`,
+      value: savedCount.toString(),
+      sub: `${appliedCount} applied`,
       subClass: "text-muted-foreground",
     },
     {
