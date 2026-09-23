@@ -14,7 +14,8 @@
     "dev:backend": "npm run dev --workspace=@tendermatch/backend",
     "dev:frontend": "npm run dev --workspace=@tendermatch/frontend",
     "migrate:up": "npm run migrate:up --workspace=@tendermatch/backend",
-    "scrape": "npm run scrape --workspace=@tendermatch/backend"
+    "scrape": "npm run scrape --workspace=@tendermatch/backend",
+    "vercel-build": "npm run build"
   },
   "engines": {
     "node": ">=20"
