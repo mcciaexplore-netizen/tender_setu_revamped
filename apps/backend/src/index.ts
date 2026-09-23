@@ -152,7 +152,7 @@ app.post('/api/auth/signup', async (req, res) => {
     `, [companyId, email, await hashPassword(password), role]);
     await client.query('COMMIT');
     const user = userResult.rows[0];
-    void scoreCompanyAgainstTenders(companyId).catch((error) => console.error('Initial match scoring failed:', error));
+    await scoreCompanyAgainstTenders(companyId).catch((error) => console.error('Initial match scoring failed:', error));
     return res.status(201).json({ token: createToken(user), companyId, role: user.role });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -274,7 +274,7 @@ app.put('/api/auth/profile', requireAuth, async (req: AuthenticatedRequest, res)
       typeof req.body.personnel_credentials === 'string' ? req.body.personnel_credentials.trim() || null : null,
       req.auth!.company_id,
     ]);
-    void scoreCompanyAgainstTenders(req.auth!.company_id).catch((error) => console.error('Profile re-score failed:', error));
+    await scoreCompanyAgainstTenders(req.auth!.company_id).catch((error) => console.error('Profile re-score failed:', error));
     return res.json({ success: true });
   } catch (error) {
     console.error('Profile update failed:', error);
