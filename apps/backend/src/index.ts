@@ -30,7 +30,8 @@ app.use(cors({
     if (
       !origin ||
       env.corsOrigins.includes(origin) ||
-      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+      /\.vercel\.app$/.test(origin)
     ) {
       return callback(null, true);
     }
@@ -300,9 +301,13 @@ app.use((error: Error, _req: express.Request, res: express.Response, _next: expr
   res.status(500).json({ error: 'An unexpected server error occurred.' });
 });
 
-app.listen(port, () => {
-  console.log(`TenderMatch backend listening on port ${port}`);
-  const scheduledScrape = () => void runLiveScraper().catch((error) => console.error('Scheduled scraper failed:', error));
-  setTimeout(scheduledScrape, 5000);
-  setInterval(scheduledScrape, 10 * 60 * 1000);
-});
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`TenderMatch backend listening on port ${port}`);
+    const scheduledScrape = () => void runLiveScraper().catch((error) => console.error('Scheduled scraper failed:', error));
+    setTimeout(scheduledScrape, 5000);
+    setInterval(scheduledScrape, 10 * 60 * 1000);
+  });
+}
+
+export default app;

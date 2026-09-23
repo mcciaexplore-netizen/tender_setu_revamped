@@ -9,7 +9,8 @@
     "build": "tsc",
     "lint": "tsc --noEmit",
     "start": "node dist/index.js",
-    "migrate:up": "node-pg-migrate up -m migrations --database-url-var DATABASE_URL"
+    "migrate:up": "node-pg-migrate up -m migrations --database-url-var DATABASE_URL",
+    "scrape": "ts-node src/scripts/runScraper.ts"
   },
   "keywords": [],
   "author": "",
