@@ -160,7 +160,14 @@ function Dashboard() {
         );
 
         if (!res.ok) {
-          throw new Error("Failed to fetch matches");
+          let message = "Failed to fetch matches";
+          try {
+            const payload = await res.json();
+            if (typeof payload.error === "string") message = payload.error;
+          } catch {
+            // Keep the safe fallback for non-JSON proxy responses.
+          }
+          throw new Error(message);
         }
 
         const data = await res.json();

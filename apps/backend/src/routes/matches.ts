@@ -6,8 +6,6 @@ const router = Router();
 
 router.use(requireAuth);
 
-import { scoreCompanyAgainstTenders } from '../services/matchingService';
-
 // GET /api/matches - Get matches for logged in company
 router.get('/', async (req: AuthenticatedRequest, res) => {
   const companyId = req.auth!.company_id;
@@ -30,24 +28,9 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
       ORDER BY m.overall_score DESC
     `, filterValues);
 
-    // If no matches are found, the engine might not have run for this company yet
-    // Trigger it on-the-fly for all active tenders
-    if (rows.length === 0) {
-      console.log(`No matches found for ${companyId}. Triggering matching engine...`);
-      await scoreCompanyAgainstTenders(companyId);
-      
-      // Query again after matching
-      const retry = await query(`
-        SELECT m.*, row_to_json(t.*) as tender
-        FROM matches m
-        JOIN tenders t ON m.tender_id = t.id
-        WHERE m.company_id = $1 AND m.overall_score >= 30
-        ORDER BY m.overall_score DESC
-      `, [companyId]);
-      
-      rows = retry.rows;
-    }
-
+    // A read request must remain read-only. Matching is recalculated by signup,
+    // profile updates, and the explicit live-sync job; never run that expensive
+    // process inside a filtered dashboard request.
     return res.json(rows);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
