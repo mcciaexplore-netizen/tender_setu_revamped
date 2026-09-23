@@ -76,6 +76,11 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <img
+            src="/mccia-logo.jpg"
+            alt="MCCIA"
+            className="hidden h-8 w-auto sm:block"
+          />
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground uppercase">
             {initials}
           </div>
