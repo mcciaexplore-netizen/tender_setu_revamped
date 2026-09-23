@@ -24,6 +24,10 @@ export const env = {
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean),
   ),
+  // Optional: Gemini API key for AI-powered tender extraction.
+  // Get a free key at https://aistudio.google.com/apikey (no credit card needed).
+  // If not set, the scraper falls back to the local regex-based parser.
+  geminiApiKey: process.env.GEMINI_API_KEY?.trim() ?? '',
 };
 
 if (env.jwtSecret.length < 32) {

@@ -1,4 +1,5 @@
-import { query } from '../utils/db';
+﻿import { query } from '../utils/db';
+import { extractTenderWithGemini } from './geminiService';
 
 export interface ExtractedTender {
   title: string | null;
@@ -165,7 +166,15 @@ export async function extractTenderData(
   sourceStatus: 'live_scraped' | 'needs_review' = 'needs_review',
 ): Promise<any> {
   try {
-    const parsedData = parseLocalTenderData(rawText, source);
+    // --- Step 1: Try Gemini AI extraction first ---
+    let parsedData: ExtractedTender;
+    const geminiResult = await extractTenderWithGemini(rawText, source);
+    if (geminiResult) {
+      parsedData = geminiResult;
+    } else {
+      // --- Step 2: Fall back to local regex parser ---
+      parsedData = parseLocalTenderData(rawText, source);
+    }
 
     // Check for missing required fields
     const missingFields: string[] = [];
