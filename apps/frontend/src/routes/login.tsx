@@ -116,7 +116,12 @@ export function AuthCard({ isAdmin }: { isAdmin: boolean }) {
         </div>
 
         {/* Right Column - Login Form (50%) */}
-        <div className="flex w-full md:w-1/2 items-center justify-center p-8 md:p-16 bg-white h-full overflow-hidden">
+        <div className="relative flex w-full md:w-1/2 items-center justify-center p-8 md:p-16 bg-white h-full overflow-hidden">
+          <img
+            src="/mccia-logo.jpg"
+            alt="MCCIA"
+            className="absolute top-6 right-6 h-8 w-auto md:top-8 md:right-8"
+          />
           <div className="w-full max-w-sm">
             <div className="mb-8 md:hidden flex items-center gap-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-xl shadow-primary/20">

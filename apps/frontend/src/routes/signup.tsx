@@ -219,7 +219,12 @@ function SignupPage() {
         </div>
 
         {/* Right Column - Form Steps (50%) */}
-        <div className="flex w-full md:w-1/2 flex-col items-center justify-center p-8 md:p-12 bg-slate-50/50 h-full overflow-hidden">
+        <div className="relative flex w-full md:w-1/2 flex-col items-center justify-center p-8 md:p-12 bg-slate-50/50 h-full overflow-hidden">
+          <img
+            src="/mccia-logo.jpg"
+            alt="MCCIA"
+            className="absolute top-6 right-6 h-8 w-auto md:top-8 md:right-8"
+          />
           <div className="w-full max-w-lg relative">
             {/* Header (Mobile) */}
             <div className="mb-8 md:hidden flex items-center justify-between">
