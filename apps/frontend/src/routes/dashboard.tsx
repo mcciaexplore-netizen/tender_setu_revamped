@@ -10,21 +10,6 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
-const filters = [
-  "All",
-  "IT",
-  "Defence",
-  "Transport",
-  "Construction",
-  "Healthcare",
-  "Education",
-  "Services",
-  "Manufacturing",
-  "Energy",
-  "Agriculture",
-  "Other",
-];
-
 function Dashboard() {
   const { activeFilter, setFilter, savedTenders, appliedTenders } = useStore();
   const navigate = useNavigate();
@@ -32,6 +17,7 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [tendersList, setTendersList] = useState<any[]>([]);
   const [companyName, setCompanyName] = useState("Your Company");
+  const [companySectors, setCompanySectors] = useState<string[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
   const [msmeFilters, setMsmeFilters] = useState({
@@ -160,6 +146,9 @@ function Dashboard() {
           if (profileData.companyName) {
             setCompanyName(profileData.companyName);
           }
+          if (Array.isArray(profileData.sectors)) {
+            setCompanySectors(profileData.sectors);
+          }
         }
 
         const res = await fetch(
@@ -235,6 +224,8 @@ function Dashboard() {
     // Scheduled crawling runs only on the backend. Browser clients fetch
     // persisted matches and may request a manual sync once per server limit.
   }, [navigate, matchQuery]);
+
+  const filters = ["All", ...companySectors];
 
   const list = tendersList.filter(
     (t) => activeFilter === "All" || t.sector === activeFilter,
