@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
-const pdfParse = require('pdf-parse');
 import { query } from '../utils/db';
 import { extractTenderData } from '../services/extractionService';
 import { scoreTenderAgainstCompanies } from '../services/matchingService';
@@ -250,6 +249,7 @@ router.post('/upload', requireAdmin, upload.single('file'), async (req, res) => 
   }
 
   try {
+    const pdfParse = require('pdf-parse');
     const pdfData = await pdfParse(req.file.buffer);
     const rawText = pdfData.text;
 
