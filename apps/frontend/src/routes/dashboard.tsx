@@ -20,6 +20,9 @@ const filters = [
   "Education",
   "Services",
   "Manufacturing",
+  "Energy",
+  "Agriculture",
+  "Other",
 ];
 
 function Dashboard() {

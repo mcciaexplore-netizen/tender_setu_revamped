@@ -105,6 +105,14 @@ export function parseLocalTenderData(rawText: string, _source: string): Extracte
     sector = 'Construction';
   } else if (textLower.includes('housekeeping') || textLower.includes('pantry') || textLower.includes('amc') || textLower.includes('maintenance')) {
     sector = 'Services';
+  } else if (textLower.includes('manufactur') || textLower.includes('fabrication') || textLower.includes('assembly line') || textLower.includes('factory')) {
+    sector = 'Manufacturing';
+  } else if (textLower.includes('solar') || textLower.includes('power plant') || textLower.includes('electricity') || textLower.includes('grid') || textLower.includes('renewable')) {
+    sector = 'Energy';
+  } else if (textLower.includes('agriculture') || textLower.includes('farming') || textLower.includes('irrigation') || textLower.includes('crop')) {
+    sector = 'Agriculture';
+  } else {
+    sector = 'Other';
   }
 
   // 3. Certifications Extraction
