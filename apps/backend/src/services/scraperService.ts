@@ -3,7 +3,6 @@ import * as cheerio from 'cheerio';
 import { pool, query } from '../utils/db';
 import { scoreTenderAgainstCompanies } from './matchingService';
 import { extractTenderData } from './extractionService';
-import puppeteer from 'puppeteer-core';
 import { getGeminiUsageStats } from './geminiService';
 import fs from 'fs';
 
@@ -230,6 +229,7 @@ export async function runLiveScraper(): Promise<{ success: boolean; count: numbe
       }
 
       if (chromePath) {
+        const puppeteer = await import('puppeteer-core');
         browser = await puppeteer.launch({
           executablePath: chromePath,
           headless: true,
