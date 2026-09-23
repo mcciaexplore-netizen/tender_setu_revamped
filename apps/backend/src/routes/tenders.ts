@@ -107,11 +107,16 @@ function unavailableAnswer(needsManualReview: boolean, answer: string): TenderAn
   return { answer_available: false, answer_kind: 'unavailable', answer, citations: [], needs_manual_review: needsManualReview };
 }
 
-// POST /api/tenders/sync - Dynamically fetch and scrape GeM CPPP live from internet
+// POST /api/tenders/sync - Kick off a live scrape of 24 government portals in
+// the background. A full run takes minutes (sequential requests to real
+// external sites), far longer than any serverless request can stay open, so
+// we return immediately and let it finish via Vercel's waitUntil instead of
+// blocking the response on it.
 router.post('/sync', requireAuth, syncLimiter, async (_req, res) => {
   try {
-    const result = await runLiveScraper();
-    return res.json(result);
+    const { waitUntil } = await import('@vercel/functions');
+    waitUntil(runLiveScraper().catch((error) => console.error('Background sync failed:', error)));
+    return res.json({ started: true, message: 'Sync started. New tenders will appear within a few minutes.' });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

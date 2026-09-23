@@ -30,6 +30,7 @@ function Dashboard() {
   const [tendersList, setTendersList] = useState<any[]>([]);
   const [companyName, setCompanyName] = useState("Your Company");
   const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
   const [msmeFilters, setMsmeFilters] = useState({
     udyam_priority: false,
     emd_exempt: false,
@@ -47,6 +48,7 @@ function Dashboard() {
   const handleSync = async () => {
     setSyncing(true);
     setError("");
+    setSyncMessage("");
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${API_URL}/api/tenders/sync`, {
@@ -67,6 +69,11 @@ function Dashboard() {
           message = `${message} Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`;
         }
         throw new Error(message);
+      }
+
+      const startedPayload = await res.json().catch(() => null);
+      if (typeof startedPayload?.message === "string") {
+        setSyncMessage(startedPayload.message);
       }
 
       const matchesRes = await fetch(
@@ -425,6 +432,11 @@ function Dashboard() {
           {error && (
             <div className="text-destructive p-4 bg-destructive/10 rounded-lg">
               {error}
+            </div>
+          )}
+          {!error && syncMessage && (
+            <div className="text-primary p-4 bg-primary/10 rounded-lg">
+              {syncMessage}
             </div>
           )}
           {!loading && !error && list.length === 0 && (
