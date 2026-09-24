@@ -274,7 +274,10 @@ app.put('/api/auth/profile', requireAuth, async (req: AuthenticatedRequest, res)
       typeof req.body.personnel_credentials === 'string' ? req.body.personnel_credentials.trim() || null : null,
       req.auth!.company_id,
     ]);
-    await scoreCompanyAgainstTenders(req.auth!.company_id).catch((error) => console.error('Profile re-score failed:', error));
+    // Re-scoring iterates every tender with an individual query and can take a
+    // long time with a large tender catalog; run it after responding so the
+    // save itself doesn't hang waiting on it.
+    void scoreCompanyAgainstTenders(req.auth!.company_id).catch((error) => console.error('Profile re-score failed:', error));
     return res.json({ success: true });
   } catch (error) {
     console.error('Profile update failed:', error);

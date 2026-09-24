@@ -61,8 +61,9 @@ router.get('/calendar.ics', async (req: AuthenticatedRequest, res) => {
   } catch (error: any) { return res.status(500).json({ error: error.message }); }
 });
 
-// Calendar data for saved, applied, and pipeline tenders. It contains only
-// deadlines stored on the tender record; absent deadlines are not guessed.
+// Calendar data for saved, applied, pipeline, and well-matched live tenders
+// (same >=30 relevance threshold as /api/matches). It contains only deadlines
+// stored on the tender record; absent deadlines are not guessed.
 router.get('/calendar', async (req: AuthenticatedRequest, res) => {
   try {
     const { rows } = await query(`
@@ -74,7 +75,9 @@ router.get('/calendar', async (req: AuthenticatedRequest, res) => {
       LEFT JOIN saved_tenders s ON s.tender_id = t.id AND s.company_id = $1
       LEFT JOIN applied_tenders p ON p.tender_id = t.id AND p.company_id = $1
       LEFT JOIN tender_applications a ON a.tender_id = t.id AND a.company_id = $1
-      WHERE (s.id IS NOT NULL OR p.id IS NOT NULL OR a.id IS NOT NULL) AND t.deadline IS NOT NULL
+      LEFT JOIN matches m ON m.tender_id = t.id AND m.company_id = $1
+      WHERE t.deadline IS NOT NULL
+        AND (s.id IS NOT NULL OR p.id IS NOT NULL OR a.id IS NOT NULL OR m.overall_score >= 30)
       ORDER BY t.deadline ASC
     `, [req.auth!.company_id]);
     return res.json(rows);

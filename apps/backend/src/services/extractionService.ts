@@ -12,6 +12,12 @@ export interface ExtractedTender {
   confidence_score: number;
 }
 
+const MONTH_NAMES: Record<string, number> = {
+  january: 0, jan: 0, february: 1, feb: 1, march: 2, mar: 2, april: 3, apr: 3,
+  may: 4, june: 5, jun: 5, july: 6, jul: 6, august: 7, aug: 7,
+  september: 8, sep: 8, sept: 8, october: 9, oct: 9, november: 10, nov: 10, december: 11, dec: 11,
+};
+
 function matchesKeyword(text: string, keywords: string[]): boolean {
   return keywords.some(kw => {
     if (kw.includes(' ') || kw.includes('/') || kw.includes('-') || kw.includes('.')) {
@@ -137,13 +143,38 @@ export function parseLocalTenderData(rawText: string, _source: string): Extracte
 
   // 5. Deadline Parsing
   let deadline: string | null = null;
-  const dateMatches = rawText.match(/\b\d{2}-\d{2}-\d{4}\b/g);
-  if (dateMatches && dateMatches.length > 0) {
-    const lastDateStr = dateMatches[dateMatches.length - 1];
-    const parts = lastDateStr.split('-');
-    const parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T17:00:00Z`);
-    if (!isNaN(parsedDate.getTime())) {
-      deadline = parsedDate.toISOString();
+  const labeledDateMatch = rawText.match(
+    /(?:closing date|last date|due date|submission date|bid submission end date|end date)\s*:?\s*(\d{1,2})[-/\s]([A-Za-z]+)[-/\s](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?/i,
+  );
+  if (labeledDateMatch) {
+    const [, dayStr, monthStr, yearStr, hourStr, minStr, secStr, ampm] = labeledDateMatch;
+    const month = MONTH_NAMES[monthStr.toLowerCase()];
+    if (month !== undefined) {
+      let hour = hourStr ? parseInt(hourStr, 10) : 17;
+      const minute = minStr ? parseInt(minStr, 10) : 0;
+      const second = secStr ? parseInt(secStr, 10) : 0;
+      if (ampm) {
+        const isPM = ampm.toUpperCase() === 'PM';
+        if (isPM && hour < 12) hour += 12;
+        if (!isPM && hour === 12) hour = 0;
+      }
+      const day = parseInt(dayStr, 10);
+      const year = parseInt(yearStr, 10);
+      // Indian government procurement portals report times in IST (UTC+5:30).
+      const isoLocal = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}+05:30`;
+      const parsedDate = new Date(isoLocal);
+      if (!isNaN(parsedDate.getTime())) deadline = parsedDate.toISOString();
+    }
+  }
+  if (!deadline) {
+    const dateMatches = rawText.match(/\b\d{2}-\d{2}-\d{4}\b/g);
+    if (dateMatches && dateMatches.length > 0) {
+      const lastDateStr = dateMatches[dateMatches.length - 1];
+      const parts = lastDateStr.split('-');
+      const parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T17:00:00Z`);
+      if (!isNaN(parsedDate.getTime())) {
+        deadline = parsedDate.toISOString();
+      }
     }
   }
 
