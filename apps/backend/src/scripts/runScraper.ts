@@ -9,7 +9,14 @@ async function main() {
   } catch (err: any) {
     console.error('Scraper encountered an error:', err);
   } finally {
-    await pool.end();
+    // A GitHub Actions run should still exit 0 even if closing an
+    // already-broken pool throws, so a flaky network doesn't turn a
+    // "some portals were unreachable" run into a reported CI failure.
+    try {
+      await pool.end();
+    } catch (closeErr: any) {
+      console.warn('Pool close warning:', closeErr.message);
+    }
     process.exit(0);
   }
 }

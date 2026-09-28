@@ -145,6 +145,7 @@ async function scrapeGeMWithPuppeteer(browser: any, maxPages = 10): Promise<numb
     const gemUrls = ['https://gem.gov.in/cppp'];
     for (let p = 2; p <= maxPages; p++) gemUrls.push(`https://gem.gov.in/cppp/${p}?`);
 
+    let consecutiveFailures = 0;
     for (let p = 0; p < gemUrls.length; p++) {
       const pageUrl = gemUrls[p];
       console.log(`[GeM] Page ${p + 1}/${gemUrls.length}: ${pageUrl}`);
@@ -168,6 +169,7 @@ async function scrapeGeMWithPuppeteer(browser: any, maxPages = 10): Promise<numb
         });
 
         console.log(`[GeM] Page ${p + 1}: ${rows.length} bids found`);
+        consecutiveFailures = 0;
 
         for (const r of rows) {
           const title = r.titleAndId.split('[')[0].trim().replace(/^title\s*&\s*id:\s*/i, '').trim();
@@ -178,6 +180,11 @@ async function scrapeGeMWithPuppeteer(browser: any, maxPages = 10): Promise<numb
         }
       } catch (pageErr: any) {
         console.error(`[GeM] Page ${p + 1} error: ${pageErr.message}`);
+        consecutiveFailures++;
+        if (consecutiveFailures >= 2) {
+          console.warn('[GeM] Portal unreachable or geo-blocked on this runner — skipping remaining pages.');
+          break;
+        }
       }
     }
     await gemPage.close().catch(() => {});
