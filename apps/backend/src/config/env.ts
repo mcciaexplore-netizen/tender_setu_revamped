@@ -28,6 +28,14 @@ export const env = {
   // Get a free key at https://aistudio.google.com/apikey (no credit card needed).
   // If not set, the scraper falls back to the local regex-based parser.
   geminiApiKey: process.env.GEMINI_API_KEY?.trim() ?? '',
+  // Optional: SMTP credentials for notification digest emails. If not set,
+  // the notification engine still records in-app notifications but logs
+  // emails instead of sending them (same no-key, no-cost baseline as Gemini).
+  smtpHost: process.env.SMTP_HOST?.trim() ?? '',
+  smtpPort: Number(process.env.SMTP_PORT ?? 587),
+  smtpUser: process.env.SMTP_USER?.trim() ?? '',
+  smtpPass: process.env.SMTP_PASS ?? '',
+  smtpFrom: process.env.SMTP_FROM?.trim() || process.env.SMTP_USER?.trim() || 'no-reply@tendermatch.app',
 };
 
 if (env.jwtSecret.length < 32) {

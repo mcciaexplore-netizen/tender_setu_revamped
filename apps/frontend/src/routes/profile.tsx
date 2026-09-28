@@ -403,29 +403,70 @@ function ProfilePage() {
           />
         </Section>
 
-        <Section title="Personnel Credentials">
-          <p className="mb-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            Team qualifications, roles & experience
-          </p>
-          {editing ? (
-            <textarea
-              value={profile.personnel_credentials || ""}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  personnel_credentials: e.target.value,
-                })
-              }
-              placeholder="e.g., 3 Project Managers with B.Tech, 5 Senior Engineers with 10 years experience"
-              rows={4}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-900 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none shadow-inner"
-            />
-          ) : (
-            <p className="text-sm font-bold text-slate-800 whitespace-pre-line leading-relaxed bg-slate-50/50 p-5 rounded-2xl border border-slate-100/50">
-              {profile.personnel_credentials ||
-                "No personnel credentials specified yet. Click 'Edit profile' to add your team's details."}
-            </p>
-          )}
+        <Section title="GeM Seller Status">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold text-slate-900">
+                  Registered on GeM (Government e-Marketplace)
+                </p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  This helps surface GeM-specific tenders you're eligible for.
+                </p>
+              </div>
+              {editing ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setProfile({
+                      ...profile,
+                      gem_registered: !profile.gem_registered,
+                    })
+                  }
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                    profile.gem_registered ? "bg-primary" : "bg-slate-200"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                      profile.gem_registered
+                        ? "translate-x-5"
+                        : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              ) : (
+                <span
+                  className={`rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide ${
+                    profile.gem_registered
+                      ? "bg-success/10 text-success"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {profile.gem_registered ? "Registered" : "Not registered"}
+                </span>
+              )}
+            </div>
+
+            {profile.gem_registered && (
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field
+                  label="GeM Seller ID"
+                  value={profile.gem_seller_id}
+                  editing={editing}
+                  onChange={(v) => setProfile({ ...profile, gem_seller_id: v })}
+                />
+                <Field
+                  label="Primary GeM Category"
+                  value={profile.gem_primary_category}
+                  editing={editing}
+                  onChange={(v) =>
+                    setProfile({ ...profile, gem_primary_category: v })
+                  }
+                />
+              </div>
+            )}
+          </div>
         </Section>
 
         <Section title="Document vault and profile completeness">

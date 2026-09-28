@@ -2,16 +2,42 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { TenderCard } from "@/components/TenderCard";
+import {
+  LocationFilter,
+  type AuthorityType,
+  type LocationFilterValue,
+} from "@/components/LocationFilter";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "@tanstack/react-router";
 import { API_URL } from "@/utils/api";
 
+interface DashboardSearch {
+  authority_type?: AuthorityType;
+  state?: string;
+  district?: string;
+}
+
 export const Route = createFileRoute("/dashboard")({
+  validateSearch: (search: Record<string, unknown>): DashboardSearch => {
+    const result: DashboardSearch = {};
+    if (
+      search.authority_type === "state" ||
+      search.authority_type === "central" ||
+      search.authority_type === "psu"
+    ) {
+      result.authority_type = search.authority_type;
+    }
+    if (typeof search.state === "string" && search.state) result.state = search.state;
+    if (typeof search.district === "string" && search.district) result.district = search.district;
+    return result;
+  },
   component: Dashboard,
 });
 
 function Dashboard() {
   const { activeFilter, setFilter } = useStore();
+  const locationSearch = Route.useSearch();
+  const setLocationSearch = Route.useNavigate();
   const [savedCount, setSavedCount] = useState(0);
   const [appliedCount, setAppliedCount] = useState(0);
   const navigate = useNavigate();
@@ -28,12 +54,33 @@ function Dashboard() {
     gem_category: "",
   });
 
+  const locationFilterValue: LocationFilterValue = {
+    authorityType: locationSearch.authority_type,
+    state: locationSearch.state,
+    district: locationSearch.district,
+  };
+  const setLocationFilter = (next: LocationFilterValue) => {
+    void setLocationSearch({
+      search: {
+        authority_type: next.authorityType,
+        state: next.state,
+        district: next.district,
+      },
+      replace: true,
+    });
+  };
+
   const matchQuery = new URLSearchParams({
     ...(msmeFilters.udyam_priority ? { udyam_priority: "true" } : {}),
     ...(msmeFilters.emd_exempt ? { emd_exempt: "true" } : {}),
     ...(msmeFilters.gem_category
       ? { gem_category: msmeFilters.gem_category }
       : {}),
+    ...(locationSearch.authority_type
+      ? { authority_type: locationSearch.authority_type }
+      : {}),
+    ...(locationSearch.state ? { state: locationSearch.state } : {}),
+    ...(locationSearch.district ? { district: locationSearch.district } : {}),
   }).toString();
 
   const handleSync = async () => {
@@ -434,6 +481,8 @@ function Dashboard() {
             className="rounded-md border border-input bg-background px-2 py-1 text-sm"
           />
         </div>
+
+        <LocationFilter value={locationFilterValue} onChange={setLocationFilter} />
 
         <div className="mt-5 space-y-3">
           {error && (

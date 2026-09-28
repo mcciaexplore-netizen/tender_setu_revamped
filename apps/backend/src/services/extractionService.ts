@@ -9,7 +9,43 @@ export interface ExtractedTender {
   eligibility: string | null;
   certifications: string[];
   personnel_requirements: string | null;
+  state: string | null;
+  district: string | null;
+  authority_type: 'state' | 'central' | 'psu';
   confidence_score: number;
+}
+
+const INDIAN_STATES_AND_UTS = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa',
+  'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala',
+  'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland',
+  'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu and Kashmir',
+  'Ladakh', 'Chandigarh', 'Puducherry',
+];
+
+function detectState(rawText: string): string | null {
+  for (const state of INDIAN_STATES_AND_UTS) {
+    const regex = new RegExp(`\\b${state.replace(/\s+/g, '\\s+')}\\b`, 'i');
+    if (regex.test(rawText)) return state;
+  }
+  return null;
+}
+
+function detectDistrict(rawText: string): string | null {
+  const match = rawText.match(/\bdistrict\s*[:\-]?\s*([A-Za-z][A-Za-z\s]{2,25}?)(?:[.,\n]|$)/i);
+  if (!match) return null;
+  const district = match[1].trim().replace(/\s+/g, ' ');
+  return district.length >= 3 ? district : null;
+}
+
+function detectAuthorityType(rawText: string, state: string | null): 'state' | 'central' | 'psu' {
+  const lower = rawText.toLowerCase();
+  const centralKeywords = ['ministry of', 'government of india', 'central public works', 'cpwd', 'ordnance factory', 'indian railways', 'railway board', 'drdo', 'defence rd'];
+  if (centralKeywords.some((kw) => lower.includes(kw))) return 'central';
+  const psuKeywords = [' limited', ' nigam', ' corporation', ' ltd.', ' ltd '];
+  if (psuKeywords.some((kw) => lower.includes(kw))) return 'psu';
+  return state ? 'state' : 'state';
 }
 
 const MONTH_NAMES: Record<string, number> = {
@@ -187,6 +223,11 @@ export function parseLocalTenderData(rawText: string, _source: string): Extracte
 
   const confidence_score = (title ? 30 : 0) + (sector ? 20 : 0) + (value !== null ? 20 : 0) + (deadline ? 30 : 0);
 
+  // 7. Location & authority classification
+  const state = detectState(rawText);
+  const district = detectDistrict(rawText);
+  const authority_type = detectAuthorityType(rawText, state);
+
   return {
     title,
     sector,
@@ -195,6 +236,9 @@ export function parseLocalTenderData(rawText: string, _source: string): Extracte
     eligibility: null,
     certifications,
     personnel_requirements,
+    state,
+    district,
+    authority_type,
     confidence_score,
   };
 }
@@ -209,7 +253,12 @@ export async function extractTenderData(
     let parsedData: ExtractedTender;
     const geminiResult = await extractTenderWithGemini(rawText, source);
     if (geminiResult) {
-      parsedData = geminiResult;
+      parsedData = {
+        ...geminiResult,
+        state: geminiResult.state ?? detectState(rawText),
+        district: geminiResult.district ?? detectDistrict(rawText),
+        authority_type: geminiResult.authority_type ?? detectAuthorityType(rawText, geminiResult.state),
+      };
     } else {
       // --- Step 2: Fall back to local regex parser ---
       parsedData = parseLocalTenderData(rawText, source);
@@ -241,8 +290,8 @@ export async function extractTenderData(
         );
         if (existing.rows.length === 0) {
           const partialResult = await query(`
-            INSERT INTO tenders (title, source, sector, value, deadline, eligibility, certifications, personnel_requirements, raw_text, confidence_score, url, source_status, needs_manual_review)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NULL, 'needs_review', TRUE)
+            INSERT INTO tenders (title, source, sector, value, deadline, eligibility, certifications, personnel_requirements, state, district, authority_type, raw_text, confidence_score, url, source_status, needs_manual_review)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NULL, 'needs_review', TRUE)
             RETURNING *
           `, [
             parsedData.title,
@@ -253,6 +302,9 @@ export async function extractTenderData(
             parsedData.eligibility,
             parsedData.certifications,
             parsedData.personnel_requirements,
+            parsedData.state,
+            parsedData.district,
+            parsedData.authority_type,
             rawText,
             parsedData.confidence_score,
           ]);
@@ -289,8 +341,8 @@ export async function extractTenderData(
     }
 
     const insertTenderQuery = `
-      INSERT INTO tenders (title, source, sector, value, deadline, eligibility, certifications, personnel_requirements, raw_text, confidence_score, url, source_status, needs_manual_review)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NULL, $11, FALSE)
+      INSERT INTO tenders (title, source, sector, value, deadline, eligibility, certifications, personnel_requirements, state, district, authority_type, raw_text, confidence_score, url, source_status, needs_manual_review)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NULL, $14, FALSE)
       RETURNING *
     `;
     const tenderRes = await query(insertTenderQuery, [
@@ -302,6 +354,9 @@ export async function extractTenderData(
       parsedData.eligibility,
       parsedData.certifications,
       parsedData.personnel_requirements || null,
+      parsedData.state,
+      parsedData.district,
+      parsedData.authority_type,
       rawText,
       parsedData.confidence_score,
       sourceStatus,

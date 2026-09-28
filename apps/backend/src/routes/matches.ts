@@ -17,6 +17,21 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
     filterValues.push(req.query.gem_category.trim());
     filterClauses.push(`t.gem_category = $${filterValues.length}`);
   }
+  if (
+    typeof req.query.authority_type === 'string' &&
+    ['state', 'central', 'psu'].includes(req.query.authority_type)
+  ) {
+    filterValues.push(req.query.authority_type);
+    filterClauses.push(`t.authority_type = $${filterValues.length}`);
+  }
+  if (typeof req.query.state === 'string' && req.query.state.trim()) {
+    filterValues.push(req.query.state.trim());
+    filterClauses.push(`t.state = $${filterValues.length}`);
+  }
+  if (typeof req.query.district === 'string' && req.query.district.trim()) {
+    filterValues.push(req.query.district.trim());
+    filterClauses.push(`t.district ILIKE $${filterValues.length}`);
+  }
   const filterSql = filterClauses.length ? ` AND ${filterClauses.join(' AND ')}` : '';
 
   try {

@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { TenderOnePagerModal } from "@/components/TenderOnePagerModal";
 import { useState, useEffect } from "react";
 import { formatINR, daysUntil } from "@/lib/mockData";
 import { API_URL } from "@/utils/api";
@@ -448,13 +449,16 @@ function TenderDetail() {
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold tracking-wider">
-              Tender ID: {tender.tenderNumber}
-            </span>
-            <span className="bg-success/10 text-success border border-success/20 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-              Active Portal Bid
-            </span>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <span className="bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold tracking-wider">
+                Tender ID: {tender.tenderNumber}
+              </span>
+              <span className="bg-success/10 text-success border border-success/20 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                Active Portal Bid
+              </span>
+            </div>
+            <TenderOnePagerModal tenderId={tender.id} tenderTitle={tender.title} />
           </div>
           <h1 className="text-xl font-semibold leading-snug text-foreground sm:text-[22px]">
             {tender.title}

@@ -31,13 +31,15 @@ function SignupPage() {
     password: "",
     sectors: [] as string[],
     certifications: [] as string[],
-    personnel_credentials: "",
     turnover: "",
+    gem_registered: false,
+    gem_seller_id: "",
+    gem_primary_category: "",
   });
 
   const nextStep = () => {
     setDirection("forward");
-    setStep((s) => Math.min(s + 1, 6));
+    setStep((s) => Math.min(s + 1, 5));
   };
 
   const prevStep = () => {
@@ -64,7 +66,7 @@ function SignupPage() {
   };
 
   const handleSubmit = async () => {
-    setStep(6);
+    setStep(5);
     setLoading(true);
     setError("");
 
@@ -110,7 +112,7 @@ function SignupPage() {
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
-      setStep(5); // Go back to the form if there's an error
+      setStep(4); // Go back to the form if there's an error
     }
   };
 
@@ -127,8 +129,6 @@ function SignupPage() {
       case 3:
         return true;
       case 4:
-        return formData.personnel_credentials.trim().length > 5;
-      case 5:
         return formData.turnover.length > 0;
       default:
         return true;
@@ -180,9 +180,8 @@ function SignupPage() {
                 { s: 1, title: "Identity", desc: "Company basics" },
                 { s: 2, title: "Domain", desc: "Service sectors" },
                 { s: 3, title: "Trust", desc: "Certifications" },
-                { s: 4, title: "Team", desc: "Staff resources" },
-                { s: 5, title: "Scale", desc: "Financial capacity" },
-                { s: 6, title: "Match", desc: "AI Matching" },
+                { s: 4, title: "Scale", desc: "Financial capacity" },
+                { s: 5, title: "Match", desc: "AI Matching" },
               ].map((item) => (
                 <div
                   key={item.s}
@@ -205,7 +204,7 @@ function SignupPage() {
 
           <div className="relative z-10">
             <div className="flex gap-1 mb-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
                   className={`h-0.5 rounded-full transition-all duration-500 ${step === i ? "w-6 bg-primary" : "w-1.5 bg-slate-700"}`}
@@ -236,7 +235,7 @@ function SignupPage() {
                   TenderMatch
                 </h1>
               </div>
-              <p className="text-xs font-bold text-primary">Step {step}/6</p>
+              <p className="text-xs font-bold text-primary">Step {step}/5</p>
             </div>
 
             {/* Form Content */}
@@ -389,44 +388,89 @@ function SignupPage() {
                     </button>
                   ))}
                 </div>
-              </div>
 
-              {/* Step 4: Personnel Credentials */}
-              <div
-                className={`transition-all duration-500 ${step === 4 ? "opacity-100 block" : "hidden opacity-0"}`}
-              >
-                <h2 className="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">
-                  Team Credentials.
-                </h2>
-                <p className="text-sm text-slate-500 mb-8">
-                  Specify your team's qualifications, degrees, and experience to
-                  qualify for strict personnel-based tenders.
-                </p>
+                <div className="mt-8 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        gem_registered: !prev.gem_registered,
+                      }))
+                    }
+                    className="flex w-full items-center justify-between gap-4 text-left"
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">
+                        Is your business registered on GeM (Government
+                        e-Marketplace)?
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        This helps surface GeM-specific tenders you're
+                        eligible for.
+                      </p>
+                    </div>
+                    <span
+                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                        formData.gem_registered ? "bg-primary" : "bg-slate-200"
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                          formData.gem_registered
+                            ? "translate-x-5"
+                            : "translate-x-0.5"
+                        }`}
+                      />
+                    </span>
+                  </button>
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
-                      Personnel qualifications & experience
-                    </label>
-                    <textarea
-                      value={formData.personnel_credentials}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          personnel_credentials: e.target.value,
-                        })
-                      }
-                      placeholder="e.g., 3 Project Managers with B.Tech, 5 Senior Engineers with 10 years experience"
-                      rows={4}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all text-sm resize-none shadow-inner"
-                    />
-                  </div>
+                  {formData.gem_registered && (
+                    <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                          GeM Seller ID
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.gem_seller_id}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              gem_seller_id: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. SELLERID12345"
+                          maxLength={100}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all text-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                          Primary GeM Category
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.gem_primary_category}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              gem_primary_category: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Office Furniture, IT Services"
+                          maxLength={150}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Step 5: Turnover */}
+              {/* Step 4: Turnover */}
               <div
-                className={`transition-all duration-500 ${step === 5 ? "opacity-100 block" : "hidden opacity-0"}`}
+                className={`transition-all duration-500 ${step === 4 ? "opacity-100 block" : "hidden opacity-0"}`}
               >
                 <h2 className="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">
                   Scale Factor.
@@ -463,9 +507,9 @@ function SignupPage() {
                 </div>
               </div>
 
-              {/* Step 6: Matching Animation */}
+              {/* Step 5: Matching Animation */}
               <div
-                className={`transition-all duration-700 ${step === 6 ? "opacity-100 block" : "hidden opacity-0"}`}
+                className={`transition-all duration-700 ${step === 5 ? "opacity-100 block" : "hidden opacity-0"}`}
               >
                 <div className="flex flex-col items-center justify-center text-center py-6 space-y-6">
                   <div className="relative">
@@ -502,7 +546,7 @@ function SignupPage() {
 
               {/* Navigation Footer */}
               <div
-                className={`mt-10 pt-6 border-t border-slate-100 flex items-center justify-between transition-opacity duration-300 ${step === 6 ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+                className={`mt-10 pt-6 border-t border-slate-100 flex items-center justify-between transition-opacity duration-300 ${step === 5 ? "opacity-0 pointer-events-none" : "opacity-100"}`}
               >
                 <button
                   onClick={prevStep}
@@ -516,11 +560,11 @@ function SignupPage() {
                 </button>
 
                 <button
-                  onClick={step === 5 ? handleSubmit : nextStep}
+                  onClick={step === 4 ? handleSubmit : nextStep}
                   disabled={!isStepValid()}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-black shadow-lg shadow-primary/30 hover:bg-primary/90 hover:translate-y-[-2px] active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none transition-all"
                 >
-                  {step === 5 ? "Launch Intelligence" : "Continue"}{" "}
+                  {step === 4 ? "Launch Intelligence" : "Continue"}{" "}
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>

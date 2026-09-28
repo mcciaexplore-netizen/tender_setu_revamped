@@ -22,6 +22,9 @@ export interface GeminiExtractedTender {
   eligibility: string | null;
   certifications: string[];
   personnel_requirements: string | null;
+  state: string | null;
+  district: string | null;
+  authority_type: 'state' | 'central' | 'psu' | null;
   confidence_score: number;
 }
 
@@ -54,9 +57,48 @@ function recordRequest(): void {
   dailyCallCount++;
 }
 
+// Shared low-level caller so every Gemini feature (extraction, one-pager, ...)
+// draws on the same rate-limit/retry bookkeeping above instead of racing
+// against an independent counter and blowing the real shared API quota.
+export async function callGemini(prompt: string): Promise<string> {
+  if (!env.geminiApiKey) {
+    throw new Error('GEMINI_API_KEY is not configured.');
+  }
+
+  await waitForRateLimit();
+
+  const MAX_RETRIES = 2;
+  let lastError: Error | undefined;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(env.geminiApiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const result = await model.generateContent(prompt);
+      recordRequest();
+      return result.response.text().trim();
+    } catch (err: any) {
+      lastError = err;
+      if (attempt < MAX_RETRIES) {
+        console.warn(`[Gemini] Attempt ${attempt} failed: ${err.message}. Retrying in 3s...`);
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    }
+  }
+  throw lastError ?? new Error('Gemini call failed.');
+}
+
+export function stripJsonFences(text: string): string {
+  return text
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+}
+
 // --- Extraction prompt ---
 
-const EXTRACTION_PROMPT = 'You are an expert at extracting structured information from Indian government tender web pages.\n\nExtract the following fields from the raw text/HTML provided. Return ONLY a single valid JSON object with no markdown, no explanation, just JSON.\n\nFields:\n- title: Full tender title (string, required)\n- sector: One of: IT, Construction, Healthcare, Defence, Transport, Education, Manufacturing, Services, Energy, Agriculture, Other\n- value: Contract value in Indian Rupees as plain number (e.g. 5000000 for 50 lakhs). null if not found.\n- deadline: Submission deadline as ISO 8601 string (e.g. \"2024-12-31T17:00:00Z\"). null if not found.\n- eligibility: Who can apply (string or null)\n- certifications: Array from: [\"ISO 9001\",\"ISO 27001\",\"ISO 14001\",\"MSME\",\"CE Certified\",\"FDA Approved\",\"WHO-GMP Certified\",\"ARAI Approved\"]. Empty array if none.\n- personnel_requirements: Key staff qualifications (string or null)\n- confidence_score: Your confidence 0-100\n\nReturn ONLY this JSON:\n{"title":"...","sector":"...","value":null,"deadline":null,"eligibility":null,"certifications":[],"personnel_requirements":null,"confidence_score":80}\n\nRaw tender text:\n';
+const EXTRACTION_PROMPT = 'You are an expert at extracting structured information from Indian government tender web pages.\n\nExtract the following fields from the raw text/HTML provided. Return ONLY a single valid JSON object with no markdown, no explanation, just JSON.\n\nFields:\n- title: Full tender title (string, required)\n- sector: One of: IT, Construction, Healthcare, Defence, Transport, Education, Manufacturing, Services, Energy, Agriculture, Other\n- value: Contract value in Indian Rupees as plain number (e.g. 5000000 for 50 lakhs). null if not found.\n- deadline: Submission deadline as ISO 8601 string (e.g. \"2024-12-31T17:00:00Z\"). null if not found.\n- eligibility: Who can apply (string or null)\n- certifications: Array from: [\"ISO 9001\",\"ISO 27001\",\"ISO 14001\",\"MSME\",\"CE Certified\",\"FDA Approved\",\"WHO-GMP Certified\",\"ARAI Approved\"]. Empty array if none.\n- personnel_requirements: Key staff qualifications (string or null)\n- state: The full Indian state or union territory name the tender is issued for/in (e.g. "Maharashtra", "Karnataka", "Delhi"). null if not determinable.\n- district: The specific district named in the tender, if any (e.g. "Pune", "Nagpur"). null if not found.\n- authority_type: One of "central" (Ministries, Government of India, CPWD, Railways, Defence services, GeM central bids), "psu" (a Limited/Corporation/Nigam/Board public sector undertaking), or "state" (a state/UT government department, state PSU, or municipal body). Use "state" when unsure.\n- confidence_score: Your confidence 0-100\n\nReturn ONLY this JSON:\n{"title":"...","sector":"...","value":null,"deadline":null,"eligibility":null,"certifications":[],"personnel_requirements":null,"state":null,"district":null,"authority_type":"state","confidence_score":80}\n\nRaw tender text:\n';
 
 export async function extractTenderWithGemini(
   rawText: string,

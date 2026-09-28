@@ -3,6 +3,7 @@ import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { query } from '../utils/db';
 import { extractTenderData } from '../services/extractionService';
+import { generateTenderOnePager, fallbackOnePager } from '../services/onePagerService';
 import { scoreTenderAgainstCompanies } from '../services/matchingService';
 import { runLiveScraper } from '../services/scraperService';
 import { AuthenticatedRequest, requireAdmin, requireAuth } from '../middleware/auth';
@@ -161,6 +162,48 @@ router.get('/:id/gap-report', requireAuth, async (req: AuthenticatedRequest, res
   }
 });
 
+// GET /api/tenders/:id/one-pager - AI-generated executive summary of the
+// tender's procurement specs, eligibility criteria, and payment terms.
+// Cached in tenders.one_pager_data once generated so repeat views (and the
+// PDF export) don't re-spend Gemini quota. A generation failure (rate limit,
+// missing API key, malformed response) returns a fallback structure with a
+// 200 rather than an error, so the UI always has something to render; the
+// failure is never cached, so the next request retries generation.
+router.get('/:id/one-pager', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { rows } = await query('SELECT raw_text, one_pager_data FROM tenders WHERE id = $1', [req.params.id]);
+    const tender = rows[0];
+    if (!tender) return res.status(404).json({ error: 'Tender not found.' });
+
+    if (tender.one_pager_data) {
+      return res.json({ ...tender.one_pager_data, cached: true });
+    }
+
+    if (!tender.raw_text || !tender.raw_text.trim()) {
+      return res.json({
+        ...fallbackOnePager(),
+        cached: false,
+        generation_error: 'No extracted tender text is available to analyze.',
+      });
+    }
+
+    try {
+      const onePager = await generateTenderOnePager(tender.raw_text);
+      await query('UPDATE tenders SET one_pager_data = $1::jsonb WHERE id = $2', [JSON.stringify(onePager), req.params.id]);
+      return res.json({ ...onePager, cached: false });
+    } catch (generationError: any) {
+      console.error(`[OnePager] Generation failed for tender ${req.params.id}: ${generationError.message}`);
+      return res.json({
+        ...fallbackOnePager(),
+        cached: false,
+        generation_error: 'AI analysis is temporarily unavailable (rate limit or service issue). Showing a placeholder — try again shortly.',
+      });
+    }
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // Free, deterministic tender question helper: it returns only source excerpts,
 // never an invented answer or a model-generated interpretation.
 router.get('/:id/questions', requireAuth, async (req: AuthenticatedRequest, res) => {
@@ -281,11 +324,12 @@ router.post('/ingest', requireAdmin, async (req, res) => {
 
   try {
     for (const t of tenders) {
+      const authorityType = ['state', 'central', 'psu'].includes(t.authority_type) ? t.authority_type : 'state';
       const { rows: tenderRows } = await query(`
-        INSERT INTO tenders (title, source, sector, value, deadline, eligibility, certifications, raw_text, confidence_score, url)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        INSERT INTO tenders (title, source, sector, value, deadline, eligibility, certifications, raw_text, confidence_score, url, state, district, authority_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING id
-      `, [t.title, t.source, t.sector, t.value, t.deadline, t.eligibility, t.certifications, t.raw_text, t.confidence_score, t.url || null]);
+      `, [t.title, t.source, t.sector, t.value, t.deadline, t.eligibility, t.certifications, t.raw_text, t.confidence_score, t.url || null, t.state || null, t.district || null, authorityType]);
 
       const tenderId = tenderRows[0].id;
       

@@ -19,6 +19,7 @@ import matchesRouter from './routes/matches';
 import adminRouter from './routes/admin';
 import proxyRouter from './routes/proxy';
 import companyRouter from './routes/company';
+import notificationsRouter from './routes/notifications';
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
@@ -126,9 +127,15 @@ app.post('/api/auth/signup', async (req, res) => {
 
   const sectors = Array.isArray(req.body.sectors) ? req.body.sectors.filter((sector: unknown) => typeof sector === 'string') : [];
   const certifications = Array.isArray(req.body.certifications) ? req.body.certifications.filter((certification: unknown) => typeof certification === 'string') : [];
-  const personnelCredentials = typeof req.body.personnel_credentials === 'string' ? req.body.personnel_credentials.trim() || null : null;
   const parsedTurnover = Number(req.body.turnover);
   const turnover = Number.isFinite(parsedTurnover) && parsedTurnover >= 0 ? parsedTurnover : 0;
+  const gemRegistered = req.body.gem_registered === true;
+  const gemSellerIdInput = typeof req.body.gem_seller_id === 'string' ? req.body.gem_seller_id.trim() : '';
+  const gemPrimaryCategoryInput = typeof req.body.gem_primary_category === 'string' ? req.body.gem_primary_category.trim() : '';
+  if (gemSellerIdInput.length > 100) return res.status(400).json({ error: 'GeM Seller ID must be 100 characters or fewer.' });
+  if (gemPrimaryCategoryInput.length > 150) return res.status(400).json({ error: 'GeM primary category must be 150 characters or fewer.' });
+  const gemSellerId = gemRegistered ? (gemSellerIdInput || null) : null;
+  const gemPrimaryCategory = gemRegistered ? (gemPrimaryCategoryInput || null) : null;
   const role: UserRole = isConfiguredAdmin(email) ? 'admin' : 'owner';
   const client = await pool.connect();
   try {
@@ -140,10 +147,10 @@ app.post('/api/auth/signup', async (req, res) => {
     }
     const profile = JSON.stringify({ companyName, email, entityType: 'Private Limited' });
     const companyResult = await client.query(`
-      INSERT INTO companies (profile, sectors, certifications, turnover_year_1, personnel_credentials)
-      VALUES ($1, $2::text[], $3::text[], $4, $5)
+      INSERT INTO companies (profile, sectors, certifications, turnover_year_1, gem_registered, gem_seller_id, gem_primary_category)
+      VALUES ($1, $2::text[], $3::text[], $4, $5, $6, $7)
       RETURNING id
-    `, [profile, sectors, certifications, turnover, personnelCredentials]);
+    `, [profile, sectors, certifications, turnover, gemRegistered, gemSellerId, gemPrimaryCategory]);
     const companyId = companyResult.rows[0].id;
     const userResult = await client.query(`
       INSERT INTO company_users (company_id, email, password_hash, role)
@@ -234,6 +241,9 @@ app.get('/api/auth/profile', requireAuth, async (req: AuthenticatedRequest, res)
       certifications: company.certifications ?? [],
       turnover: [company.turnover_year_1 ?? 0, company.turnover_year_2 ?? 0, company.turnover_year_3 ?? 0],
       personnel_credentials: company.personnel_credentials ?? '',
+      gem_registered: company.gem_registered ?? false,
+      gem_seller_id: company.gem_seller_id ?? '',
+      gem_primary_category: company.gem_primary_category ?? '',
     });
   } catch (error) {
     console.error('Profile lookup failed:', error);
@@ -256,6 +266,13 @@ app.put('/api/auth/profile', requireAuth, async (req: AuthenticatedRequest, res)
       const numeric = Number(value);
       return Number.isFinite(numeric) && numeric >= 0 ? numeric : 0;
     });
+    const gemRegistered = req.body.gem_registered === true;
+    const gemSellerIdInput = typeof req.body.gem_seller_id === 'string' ? req.body.gem_seller_id.trim() : '';
+    const gemPrimaryCategoryInput = typeof req.body.gem_primary_category === 'string' ? req.body.gem_primary_category.trim() : '';
+    if (gemSellerIdInput.length > 100) return res.status(400).json({ error: 'GeM Seller ID must be 100 characters or fewer.' });
+    if (gemPrimaryCategoryInput.length > 150) return res.status(400).json({ error: 'GeM primary category must be 150 characters or fewer.' });
+    const gemSellerId = gemRegistered ? (gemSellerIdInput || null) : null;
+    const gemPrimaryCategory = gemRegistered ? (gemPrimaryCategoryInput || null) : null;
     const profile = JSON.stringify({
       ...previousProfile,
       companyName: typeof req.body.companyName === 'string' ? req.body.companyName.trim() : previousProfile.companyName,
@@ -266,12 +283,14 @@ app.put('/api/auth/profile', requireAuth, async (req: AuthenticatedRequest, res)
       UPDATE companies
       SET profile = $1, sectors = $2::text[], certifications = $3::text[],
           turnover_year_1 = $4, turnover_year_2 = $5, turnover_year_3 = $6,
-          personnel_credentials = $7, updated_at = NOW()
-      WHERE id = $8
+          personnel_credentials = $7, gem_registered = $8, gem_seller_id = $9,
+          gem_primary_category = $10, updated_at = NOW()
+      WHERE id = $11
     `, [
       profile, sectors, certifications,
       turnover[0] ?? 0, turnover[1] ?? 0, turnover[2] ?? 0,
       typeof req.body.personnel_credentials === 'string' ? req.body.personnel_credentials.trim() || null : null,
+      gemRegistered, gemSellerId, gemPrimaryCategory,
       req.auth!.company_id,
     ]);
     // Re-scoring iterates every tender with an individual query and can take a
@@ -290,6 +309,7 @@ app.use('/api/matches', matchesRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/proxy', proxyRouter);
 app.use('/api/company', companyRouter);
+app.use('/api/notifications', notificationsRouter);
 
 const frontendDirectory = process.env.FRONTEND_DIST_PATH ?? path.resolve(__dirname, '../public');
 if (fs.existsSync(frontendDirectory)) {

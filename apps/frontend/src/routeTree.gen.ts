@@ -15,6 +15,7 @@ import { Route as SignupRouteImport } from "./routes/signup";
 import { Route as SavedRouteImport } from "./routes/saved";
 import { Route as ProfileRouteImport } from "./routes/profile";
 import { Route as LoginRouteImport } from "./routes/login";
+import { Route as NotificationsRouteImport } from "./routes/notifications";
 import { Route as DashboardRouteImport } from "./routes/dashboard";
 import { Route as ClosingSoonRouteImport } from "./routes/closing-soon";
 import { Route as AppliedRouteImport } from "./routes/applied";
@@ -57,6 +58,11 @@ const LoginRoute = LoginRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: "/dashboard",
   path: "/dashboard",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: "/notifications",
+  path: "/notifications",
   getParentRoute: () => rootRouteImport,
 } as any);
 const ClosingSoonRoute = ClosingSoonRouteImport.update({
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   "/closing-soon": typeof ClosingSoonRoute;
   "/dashboard": typeof DashboardRoute;
   "/login": typeof LoginRoute;
+  "/notifications": typeof NotificationsRoute;
   "/profile": typeof ProfileRoute;
   "/saved": typeof SavedRoute;
   "/signup": typeof SignupRoute;
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   "/closing-soon": typeof ClosingSoonRoute;
   "/dashboard": typeof DashboardRoute;
   "/login": typeof LoginRoute;
+  "/notifications": typeof NotificationsRoute;
   "/profile": typeof ProfileRoute;
   "/saved": typeof SavedRoute;
   "/signup": typeof SignupRoute;
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   "/closing-soon": typeof ClosingSoonRoute;
   "/dashboard": typeof DashboardRoute;
   "/login": typeof LoginRoute;
+  "/notifications": typeof NotificationsRoute;
   "/profile": typeof ProfileRoute;
   "/saved": typeof SavedRoute;
   "/signup": typeof SignupRoute;
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | "/closing-soon"
     | "/dashboard"
     | "/login"
+    | "/notifications"
     | "/profile"
     | "/saved"
     | "/signup"
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | "/closing-soon"
     | "/dashboard"
     | "/login"
+    | "/notifications"
     | "/profile"
     | "/saved"
     | "/signup"
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | "/closing-soon"
     | "/dashboard"
     | "/login"
+    | "/notifications"
     | "/profile"
     | "/saved"
     | "/signup"
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   ClosingSoonRoute: typeof ClosingSoonRoute;
   DashboardRoute: typeof DashboardRoute;
   LoginRoute: typeof LoginRoute;
+  NotificationsRoute: typeof NotificationsRoute;
   ProfileRoute: typeof ProfileRoute;
   SavedRoute: typeof SavedRoute;
   SignupRoute: typeof SignupRoute;
@@ -250,6 +263,13 @@ declare module "@tanstack/react-router" {
       path: "/dashboard";
       fullPath: "/dashboard";
       preLoaderRoute: typeof DashboardRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/notifications": {
+      id: "/notifications";
+      path: "/notifications";
+      fullPath: "/notifications";
+      preLoaderRoute: typeof NotificationsRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/closing-soon": {
@@ -332,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClosingSoonRoute: ClosingSoonRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
   ProfileRoute: ProfileRoute,
   SavedRoute: SavedRoute,
   SignupRoute: SignupRoute,
