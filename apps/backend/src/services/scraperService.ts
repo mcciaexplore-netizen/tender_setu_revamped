@@ -202,6 +202,19 @@ export async function runLiveScraper(): Promise<{ success: boolean; count: numbe
   const lockClient = await pool.connect();
   let holdsLock = false;
 
+  // pg-pool removes its own idle-error listener the moment a client is
+  // checked out (only re-attaching it on release), so a client held for a
+  // long time — as this one is, for the whole scraper run — has no error
+  // listener at all while in use. Without this, the provider dropping the
+  // connection mid-run (e.g. an idle-connection timeout while Puppeteer is
+  // busy) emits an unhandled 'error' event straight from `pg` internals and
+  // crashes the process. Losing the lock connection isn't fatal to the run
+  // itself (advisory locks are released automatically when the underlying
+  // Postgres session ends), so this just logs instead of throwing.
+  lockClient.on('error', (err) => {
+    console.error('[Scanner] Advisory-lock connection dropped:', err.message);
+  });
+
   try {
     const lockResult = await lockClient.query('SELECT pg_try_advisory_lock($1) AS locked', [SCRAPER_ADVISORY_LOCK]);
     if (!lockResult.rows[0]?.locked) {
