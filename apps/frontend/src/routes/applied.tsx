@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { type ApiRecord } from "@/lib/utils";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/applied")({
 function AppliedPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [tendersList, setTendersList] = useState<any[]>([]);
+  const [tendersList, setTendersList] = useState<ApiRecord[]>([]);
   const [stages, setStages] = useState<Record<string, string>>({});
   const [details, setDetails] = useState<
     Record<string, { notes: string; reminder_at: string }>
@@ -36,12 +37,12 @@ function AppliedPage() {
         setTendersList(data.map(mapRelationshipTender));
         setStages(
           Object.fromEntries(
-            data.map((item: any) => [item.tender_id, item.stage]),
+            data.map((item: ApiRecord) => [item.tender_id, item.stage]),
           ),
         );
         setDetails(
           Object.fromEntries(
-            data.map((item: any) => [
+            data.map((item: ApiRecord) => [
               item.tender_id,
               {
                 notes: item.notes ?? "",

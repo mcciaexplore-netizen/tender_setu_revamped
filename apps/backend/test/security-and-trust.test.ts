@@ -21,7 +21,9 @@ test('local extraction leaves unsupported fields unavailable instead of inventin
   assert.equal(parsed.value, null);
   assert.equal(parsed.deadline, null);
   assert.equal(parsed.personnel_requirements, null);
-  assert.equal(parsed.confidence_score, 30);
+  // Unclassified text falls into the 'Other' sector bucket (+20); title adds 30.
+  assert.equal(parsed.sector, 'Other');
+  assert.equal(parsed.confidence_score, 50);
 });
 
 test('local extraction scores only evidence it found', () => {

@@ -1,3 +1,4 @@
+import { getErrorMessage, type ApiRecord } from "@/lib/utils";
 import {
   createFileRoute,
   Link,
@@ -32,7 +33,7 @@ const breakdownLabels: Record<string, string> = {
   pastProjects: "Past project similarity",
 };
 
-function getRealTenderNumber(data: any): string {
+function getRealTenderNumber(data: ApiRecord): string {
   // 1. Check if raw text has an explicit Reference Number (e.g. Ref/Type: 1 or GEM/2026/B/7433500)
   const refMatch = data.raw_text?.match(/Ref\/Type:\s*([^\n]+)/i);
   if (
@@ -62,7 +63,7 @@ function getRealTenderNumber(data: any): string {
 
   // 4. Try to pull digit ID from show-bid-details URL
   if (data.url) {
-    const urlMatch = data.url.match(/show-bid-details\/([^\/\s\?]+)/);
+    const urlMatch = data.url.match(/show-bid-details\/([^/\s?]+)/);
     if (urlMatch && urlMatch[1] && urlMatch[1].length > 4) {
       return urlMatch[1];
     }
@@ -70,7 +71,7 @@ function getRealTenderNumber(data: any): string {
 
   // 5. Try to find "Tender No" or "Ref No" in raw text
   const noMatch = data.raw_text?.match(
-    /(?:tender|ref|bid)\s*(?:no|number)\.?\s*:\s*([^\n,;\|]+)/i,
+    /(?:tender|ref|bid)\s*(?:no|number)\.?\s*:\s*([^\n,;|]+)/i,
   );
   if (noMatch && noMatch[1] && noMatch[1].trim().length > 3) {
     return noMatch[1].trim();
@@ -89,8 +90,8 @@ function getRealTenderNumber(data: any): string {
 function TenderDetail() {
   const { id } = useParams({ from: "/tender/$id" });
   const navigate = useNavigate();
-  const [tender, setTender] = useState<any>(null);
-  const [companyProfile, setCompanyProfile] = useState<any>(null);
+  const [tender, setTender] = useState<ApiRecord>(null);
+  const [companyProfile, setCompanyProfile] = useState<ApiRecord>(null);
   const [eligibilityGaps, setEligibilityGaps] = useState<Array<{
     type: string;
     requirement: string;
@@ -225,8 +226,8 @@ function TenderDetail() {
             console.error("Failed to fetch company profile:", profileErr);
           }
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(getErrorMessage(err));
       } finally {
         setLoading(false);
       }
@@ -254,8 +255,8 @@ function TenderDetail() {
         throw new Error(data.error || "Tender research is unavailable.");
       setQuestions((items) => [...items, data]);
       setQuestion("");
-    } catch (cause: any) {
-      setAskError(cause.message || "Tender research is unavailable.");
+    } catch (cause) {
+      setAskError(getErrorMessage(cause, "Tender research is unavailable."));
     } finally {
       setAsking(false);
     }
@@ -458,7 +459,10 @@ function TenderDetail() {
                 Active Portal Bid
               </span>
             </div>
-            <TenderOnePagerModal tenderId={tender.id} tenderTitle={tender.title} />
+            <TenderOnePagerModal
+              tenderId={tender.id}
+              tenderTitle={tender.title}
+            />
           </div>
           <h1 className="text-xl font-semibold leading-snug text-foreground sm:text-[22px]">
             {tender.title}

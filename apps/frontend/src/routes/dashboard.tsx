@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getErrorMessage, type ApiRecord } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { TenderCard } from "@/components/TenderCard";
@@ -27,8 +28,10 @@ export const Route = createFileRoute("/dashboard")({
     ) {
       result.authority_type = search.authority_type;
     }
-    if (typeof search.state === "string" && search.state) result.state = search.state;
-    if (typeof search.district === "string" && search.district) result.district = search.district;
+    if (typeof search.state === "string" && search.state)
+      result.state = search.state;
+    if (typeof search.district === "string" && search.district)
+      result.district = search.district;
     return result;
   },
   component: Dashboard,
@@ -43,7 +46,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tendersList, setTendersList] = useState<any[]>([]);
+  const [tendersList, setTendersList] = useState<ApiRecord[]>([]);
   const [companyName, setCompanyName] = useState("Your Company");
   const [companySectors, setCompanySectors] = useState<string[]>([]);
   const [syncing, setSyncing] = useState(false);
@@ -125,7 +128,7 @@ function Dashboard() {
       }
       const data = await matchesRes.json();
 
-      const mappedTenders = data.map((m: any) => {
+      const mappedTenders = data.map((m: ApiRecord) => {
         const rawTitle = m.tender.title || "";
         const parts = rawTitle.split("/");
         const realTenderId =
@@ -165,8 +168,8 @@ function Dashboard() {
       });
 
       setTendersList(mappedTenders);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setSyncing(false);
     }
@@ -231,7 +234,7 @@ function Dashboard() {
 
         const data = await res.json();
 
-        const mappedTenders = data.map((m: any) => {
+        const mappedTenders = data.map((m: ApiRecord) => {
           const rawTitle = m.tender.title || "";
           const parts = rawTitle.split("/");
           const realTenderId =
@@ -271,8 +274,8 @@ function Dashboard() {
         });
 
         setTendersList(mappedTenders);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(getErrorMessage(err));
       } finally {
         setLoading(false);
       }
@@ -482,7 +485,10 @@ function Dashboard() {
           />
         </div>
 
-        <LocationFilter value={locationFilterValue} onChange={setLocationFilter} />
+        <LocationFilter
+          value={locationFilterValue}
+          onChange={setLocationFilter}
+        />
 
         <div className="mt-5 space-y-3">
           {error && (

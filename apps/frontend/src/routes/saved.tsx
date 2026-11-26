@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { type ApiRecord } from "@/lib/utils";
 import { Bookmark, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/saved")({
 function SavedPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [tendersList, setTendersList] = useState<any[]>([]);
+  const [tendersList, setTendersList] = useState<ApiRecord[]>([]);
 
   useEffect(() => {
     const fetchMatches = async () => {

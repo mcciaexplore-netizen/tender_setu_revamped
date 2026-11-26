@@ -1,5 +1,7 @@
+import type { ApiRecord } from "@/lib/utils";
+
 /** Converts API records without inventing values for fields not supplied by a source. */
-export function mapRelationshipTender(record: any) {
+export function mapRelationshipTender(record: ApiRecord) {
   const tender = record.tender ?? {};
   const rawTitle =
     typeof tender.title === "string" && tender.title.trim()
@@ -40,5 +42,5 @@ export function mapRelationshipTender(record: any) {
       geography: Number(record.score_geography) || 0,
       pastProjects: Number(record.score_past_projects) || 0,
     },
-  } as any;
+  } as ApiRecord;
 }

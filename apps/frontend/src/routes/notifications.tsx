@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { getErrorMessage } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Bell, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
@@ -87,14 +88,15 @@ function NotificationsPage() {
         fetch(`${API_URL}/api/notifications`, { headers }),
         fetch(`${API_URL}/api/notifications/filters`, { headers }),
       ]);
-      if (!notificationsRes.ok || !filtersRes.ok) throw new Error("Unable to load notifications.");
+      if (!notificationsRes.ok || !filtersRes.ok)
+        throw new Error("Unable to load notifications.");
       const notificationsData = await notificationsRes.json();
       const filtersData = await filtersRes.json();
       setNotifications(notificationsData.notifications);
       setUnreadCount(notificationsData.unread_count);
       setFilters(filtersData);
-    } catch (cause: any) {
-      setError(cause.message || "Unable to load notifications.");
+    } catch (cause) {
+      setError(getErrorMessage(cause, "Unable to load notifications."));
     } finally {
       setLoading(false);
     }
@@ -158,8 +160,14 @@ function NotificationsPage() {
         name: form.name.trim(),
         sectors: form.sectors,
         states: form.states,
-        districts: form.districts.split(",").map((d) => d.trim()).filter(Boolean),
-        keywords: form.keywords.split(",").map((k) => k.trim()).filter(Boolean),
+        districts: form.districts
+          .split(",")
+          .map((d) => d.trim())
+          .filter(Boolean),
+        keywords: form.keywords
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean),
         min_value: form.min_value === "" ? null : Number(form.min_value),
         max_value: form.max_value === "" ? null : Number(form.max_value),
         email_enabled: form.email_enabled,
@@ -173,7 +181,8 @@ function NotificationsPage() {
         body: JSON.stringify(payload),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to save this alert.");
+      if (!response.ok)
+        throw new Error(data.error || "Unable to save this alert.");
       setFilters((current) =>
         editingId
           ? current.map((item) => (item.id === editingId ? data : item))
@@ -181,8 +190,8 @@ function NotificationsPage() {
       );
       setShowForm(false);
       resetForm();
-    } catch (cause: any) {
-      setFormError(cause.message || "Unable to save this alert.");
+    } catch (cause) {
+      setFormError(getErrorMessage(cause, "Unable to save this alert."));
     } finally {
       setSaving(false);
     }
@@ -195,7 +204,8 @@ function NotificationsPage() {
       method: "DELETE",
       headers,
     });
-    if (response.ok) setFilters((current) => current.filter((item) => item.id !== id));
+    if (response.ok)
+      setFilters((current) => current.filter((item) => item.id !== id));
   };
 
   const markRead = async (id: string) => {
@@ -207,7 +217,9 @@ function NotificationsPage() {
     });
     if (response.ok) {
       setNotifications((current) =>
-        current.map((item) => (item.id === id ? { ...item, is_read: true } : item)),
+        current.map((item) =>
+          item.id === id ? { ...item, is_read: true } : item,
+        ),
       );
       setUnreadCount((count) => Math.max(0, count - 1));
     }
@@ -221,7 +233,9 @@ function NotificationsPage() {
       headers,
     });
     if (response.ok) {
-      setNotifications((current) => current.map((item) => ({ ...item, is_read: true })));
+      setNotifications((current) =>
+        current.map((item) => ({ ...item, is_read: true })),
+      );
       setUnreadCount(0);
     }
   };
@@ -263,14 +277,16 @@ function NotificationsPage() {
 
         <Section title="My customized alerts">
           <p className="mb-4 text-sm text-muted-foreground">
-            Define rules for sector, location, keywords, or value range. A daily job
-            matches new tenders against these rules and notifies you here (and by
-            email, if enabled).
+            Define rules for sector, location, keywords, or value range. A daily
+            job matches new tenders against these rules and notifies you here
+            (and by email, if enabled).
           </p>
 
           <div className="space-y-3">
             {filters.length === 0 && !showForm && (
-              <p className="text-sm text-muted-foreground">No custom alerts yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No custom alerts yet.
+              </p>
             )}
             {filters.map((filter) => (
               <div
@@ -281,16 +297,29 @@ function NotificationsPage() {
                   <p className="font-medium text-foreground">{filter.name}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {[
-                      filter.sectors.length ? `Sectors: ${filter.sectors.join(", ")}` : null,
-                      filter.states.length ? `States: ${filter.states.join(", ")}` : null,
-                      filter.districts.length ? `Districts: ${filter.districts.join(", ")}` : null,
-                      filter.keywords.length ? `Keywords: ${filter.keywords.join(", ")}` : null,
-                      filter.min_value !== null ? `Min ₹${filter.min_value}` : null,
-                      filter.max_value !== null ? `Max ₹${filter.max_value}` : null,
+                      filter.sectors.length
+                        ? `Sectors: ${filter.sectors.join(", ")}`
+                        : null,
+                      filter.states.length
+                        ? `States: ${filter.states.join(", ")}`
+                        : null,
+                      filter.districts.length
+                        ? `Districts: ${filter.districts.join(", ")}`
+                        : null,
+                      filter.keywords.length
+                        ? `Keywords: ${filter.keywords.join(", ")}`
+                        : null,
+                      filter.min_value !== null
+                        ? `Min ₹${filter.min_value}`
+                        : null,
+                      filter.max_value !== null
+                        ? `Max ₹${filter.max_value}`
+                        : null,
                       filter.email_enabled ? "Email: on" : "Email: off",
                     ]
                       .filter(Boolean)
-                      .join(" · ") || "No criteria set — matches every new tender."}
+                      .join(" · ") ||
+                      "No criteria set — matches every new tender."}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
@@ -315,19 +344,27 @@ function NotificationsPage() {
 
           {showForm ? (
             <div className="mt-4 space-y-4 rounded-md border border-border bg-card p-4">
-              {formError && <p className="text-sm text-destructive">{formError}</p>}
+              {formError && (
+                <p className="text-sm text-destructive">{formError}</p>
+              )}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Alert name</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Alert name
+                </label>
                 <input
                   value={form.name}
-                  onChange={(event) => setForm({ ...form, name: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, name: event.target.value })
+                  }
                   placeholder="e.g. IT tenders in Maharashtra"
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-medium text-muted-foreground">Sectors (any)</p>
+                <p className="mb-2 text-xs font-medium text-muted-foreground">
+                  Sectors (any)
+                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {AVAILABLE_SECTORS.map((sector) => (
                     <button
@@ -347,7 +384,9 @@ function NotificationsPage() {
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-medium text-muted-foreground">States (any)</p>
+                <p className="mb-2 text-xs font-medium text-muted-foreground">
+                  States (any)
+                </p>
                 <div className="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
                   {INDIAN_STATES.map((state) => (
                     <button
@@ -373,7 +412,9 @@ function NotificationsPage() {
                   </label>
                   <input
                     value={form.districts}
-                    onChange={(event) => setForm({ ...form, districts: event.target.value })}
+                    onChange={(event) =>
+                      setForm({ ...form, districts: event.target.value })
+                    }
                     placeholder="Pune, Nagpur"
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   />
@@ -384,7 +425,9 @@ function NotificationsPage() {
                   </label>
                   <input
                     value={form.keywords}
-                    onChange={(event) => setForm({ ...form, keywords: event.target.value })}
+                    onChange={(event) =>
+                      setForm({ ...form, keywords: event.target.value })
+                    }
                     placeholder="server, networking"
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   />
@@ -399,7 +442,9 @@ function NotificationsPage() {
                   <input
                     type="number"
                     value={form.min_value}
-                    onChange={(event) => setForm({ ...form, min_value: event.target.value })}
+                    onChange={(event) =>
+                      setForm({ ...form, min_value: event.target.value })
+                    }
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   />
                 </div>
@@ -410,7 +455,9 @@ function NotificationsPage() {
                   <input
                     type="number"
                     value={form.max_value}
-                    onChange={(event) => setForm({ ...form, max_value: event.target.value })}
+                    onChange={(event) =>
+                      setForm({ ...form, max_value: event.target.value })
+                    }
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   />
                 </div>
@@ -420,7 +467,9 @@ function NotificationsPage() {
                 <input
                   type="checkbox"
                   checked={form.email_enabled}
-                  onChange={(event) => setForm({ ...form, email_enabled: event.target.checked })}
+                  onChange={(event) =>
+                    setForm({ ...form, email_enabled: event.target.checked })
+                  }
                 />
                 Also email me a daily digest for this alert
               </label>
@@ -431,7 +480,11 @@ function NotificationsPage() {
                   disabled={saving}
                   className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
                 >
-                  {saving ? "Saving…" : editingId ? "Save changes" : "Create alert"}
+                  {saving
+                    ? "Saving…"
+                    : editingId
+                      ? "Save changes"
+                      : "Create alert"}
                 </button>
                 <button
                   onClick={() => {
@@ -460,7 +513,8 @@ function NotificationsPage() {
         <Section title="Notification inbox">
           {notifications.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No alert matches yet. New tenders are checked against your rules daily.
+              No alert matches yet. New tenders are checked against your rules
+              daily.
             </p>
           ) : (
             <ul className="space-y-2">
@@ -468,16 +522,22 @@ function NotificationsPage() {
                 <li
                   key={item.id}
                   className={`rounded-md border p-3 text-sm ${
-                    item.is_read ? "border-border bg-card" : "border-primary/30 bg-primary/5"
+                    item.is_read
+                      ? "border-border bg-card"
+                      : "border-primary/30 bg-primary/5"
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="flex items-center gap-1.5 font-medium text-foreground">
-                        {!item.is_read && <Bell className="h-3.5 w-3.5 text-primary" />}
+                        {!item.is_read && (
+                          <Bell className="h-3.5 w-3.5 text-primary" />
+                        )}
                         {item.title}
                       </p>
-                      <p className="mt-1 text-muted-foreground">{item.message}</p>
+                      <p className="mt-1 text-muted-foreground">
+                        {item.message}
+                      </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {new Date(item.created_at).toLocaleString("en-IN")}
                       </p>
@@ -511,7 +571,13 @@ function NotificationsPage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="mb-6 rounded-xl border border-border bg-card p-6">
       <h2 className="mb-4 text-sm font-semibold text-foreground">{title}</h2>

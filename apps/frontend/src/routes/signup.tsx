@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { getErrorMessage } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import {
   ChevronRight,
@@ -87,14 +88,24 @@ function SignupPage() {
         try {
           data = JSON.parse(raw);
         } catch {
-          throw new Error("The server returned an invalid response. Please check the API URL.");
+          throw new Error(
+            "The server returned an invalid response. Please check the API URL.",
+          );
         }
       } else {
-        throw new Error("The signup service is unavailable at this address. Please check the API URL.");
+        throw new Error(
+          "The signup service is unavailable at this address. Please check the API URL.",
+        );
       }
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to sign up");
+      }
+
+      if (!data.token || !data.companyId) {
+        throw new Error(
+          "Signup succeeded but the server sent no session. Please log in.",
+        );
       }
 
       localStorage.setItem("token", data.token);
@@ -109,8 +120,8 @@ function SignupPage() {
           navigate({ to: "/dashboard" });
         }, 1000);
       }, 3000);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(getErrorMessage(err));
       setLoading(false);
       setStep(4); // Go back to the form if there's an error
     }
@@ -171,7 +182,8 @@ function SignupPage() {
                 <span className="text-primary">competitive edge</span>.
               </h2>
               <p className="text-xl text-slate-400 leading-relaxed">
-                Fill in your details to match against currently available tender sources.
+                Fill in your details to match against currently available tender
+                sources.
               </p>
             </div>
 
@@ -406,8 +418,8 @@ function SignupPage() {
                         e-Marketplace)?
                       </p>
                       <p className="mt-1 text-[11px] text-slate-500">
-                        This helps surface GeM-specific tenders you're
-                        eligible for.
+                        This helps surface GeM-specific tenders you're eligible
+                        for.
                       </p>
                     </div>
                     <span

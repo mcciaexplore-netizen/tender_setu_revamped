@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { getErrorMessage } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { API_URL } from "@/utils/api";
@@ -38,7 +39,7 @@ function AcceptInvitePage() {
         }
         setInvitation(data);
       })
-      .catch((cause) => setError(cause.message))
+      .catch((cause) => setError(getErrorMessage(cause)))
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -68,8 +69,8 @@ function AcceptInvitePage() {
       );
       localStorage.setItem("email", invitation?.email ?? "");
       navigate({ to: "/dashboard" });
-    } catch (cause: any) {
-      setError(cause.message || "Unable to accept this invitation.");
+    } catch (cause) {
+      setError(getErrorMessage(cause, "Unable to accept this invitation."));
     } finally {
       setSubmitting(false);
     }

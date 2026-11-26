@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getErrorMessage, type ApiRecord } from "@/lib/utils";
 import { Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
@@ -115,7 +116,7 @@ function AdminDashboard() {
           },
         ]);
         setReviewQueue(
-          reviews.map((item: any) => ({
+          reviews.map((item: ApiRecord) => ({
             id: item.id,
             severity:
               item.confidence_score !== null && item.confidence_score < 50
@@ -133,14 +134,14 @@ function AdminDashboard() {
           })),
         );
         setSources(
-          sourceRows.map((item: any) => ({
+          sourceRows.map((item: ApiRecord) => ({
             name: item.source ?? "Unavailable",
             count: Number(item.count) || 0,
             status: item.has_unreviewed ? "amber" : "green",
           })),
         );
       })
-      .catch((cause: Error) => setError(cause.message));
+      .catch((cause: Error) => setError(getErrorMessage(cause)));
   }, []);
 
   return (

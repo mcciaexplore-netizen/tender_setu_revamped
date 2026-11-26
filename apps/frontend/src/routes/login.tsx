@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { getErrorMessage } from "@/lib/utils";
 import { FileSearch, Activity, ShieldCheck, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
@@ -48,8 +49,8 @@ export function AuthCard({ isAdmin }: { isAdmin: boolean }) {
       localStorage.setItem("email", email);
       setIsAdmin(data.role === "admin");
       navigate({ to: isAdmin ? "/admin" : "/dashboard" });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

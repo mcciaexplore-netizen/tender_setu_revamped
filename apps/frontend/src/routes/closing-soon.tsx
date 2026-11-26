@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { type ApiRecord } from "@/lib/utils";
 import { Hourglass, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/closing-soon")({
 function ClosingSoonPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [tendersList, setTendersList] = useState<any[]>([]);
+  const [tendersList, setTendersList] = useState<ApiRecord[]>([]);
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -28,13 +29,11 @@ function ClosingSoonPage() {
         if (!res.ok) throw new Error("Failed to fetch matches");
         const data = await res.json();
 
-        const mapped = data.map((m: any) => {
+        const mapped = data.map((m: ApiRecord) => {
           const rawTitle = m.tender.title || "";
           const parts = rawTitle.split("/");
           const realTenderId =
-            parts.length > 1
-              ? parts[parts.length - 1].trim()
-              : "Unavailable";
+            parts.length > 1 ? parts[parts.length - 1].trim() : "Unavailable";
           const orgMatch = m.tender.raw_text?.match(/Organisation:\s*([^\n]+)/);
           const rawOrg = orgMatch ? orgMatch[1].trim() : "";
           const cleanOrg = rawOrg.split("||")[0].trim();
@@ -46,7 +45,9 @@ function ClosingSoonPage() {
             source: m.tender.source,
             issuingAuthority: cleanOrg || m.tender.source || "Unavailable",
             sector: m.tender.sector,
-            contractValue: Number.isFinite(Number(m.tender.value)) ? Number(m.tender.value) : null,
+            contractValue: Number.isFinite(Number(m.tender.value))
+              ? Number(m.tender.value)
+              : null,
             deadline: m.tender.deadline,
             state: m.tender.state || "Unavailable",
             sourceStatus: m.tender.source_status ?? "needs_review",

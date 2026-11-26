@@ -50,7 +50,9 @@ export function Navbar() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch(`${API_URL}/api/notifications`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API_URL}/api/notifications`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) setUnreadCount(data.unread_count);
@@ -114,11 +116,7 @@ export function Navbar() {
               <span className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-destructive" />
             )}
           </Link>
-          <img
-            src="/mccia-logo.jpg"
-            alt="MCCIA"
-            className="h-8 w-auto"
-          />
+          <img src="/mccia-logo.jpg" alt="MCCIA" className="h-8 w-auto" />
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground uppercase">
             {initials}
           </div>

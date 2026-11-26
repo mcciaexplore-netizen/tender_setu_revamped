@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/utils";
 import { FileText, Loader2, AlertTriangle, Download } from "lucide-react";
 import {
   Sheet,
@@ -60,10 +61,15 @@ export function TenderOnePagerModal({
         { headers: { Authorization: `Bearer ${token}` } },
       );
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "Unable to generate the 1-pager summary.");
+      if (!response.ok)
+        throw new Error(
+          body.error || "Unable to generate the 1-pager summary.",
+        );
       setData(body);
-    } catch (cause: any) {
-      setError(cause.message || "Unable to generate the 1-pager summary.");
+    } catch (cause) {
+      setError(
+        getErrorMessage(cause, "Unable to generate the 1-pager summary."),
+      );
     } finally {
       setLoading(false);
     }
@@ -140,13 +146,19 @@ export function TenderOnePagerModal({
               <div className="mt-4 print:hidden">
                 <Tabs defaultValue="procurement">
                   <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="procurement">🛠️ Procurement</TabsTrigger>
-                    <TabsTrigger value="eligibility">📋 Eligibility</TabsTrigger>
+                    <TabsTrigger value="procurement">
+                      🛠️ Procurement
+                    </TabsTrigger>
+                    <TabsTrigger value="eligibility">
+                      📋 Eligibility
+                    </TabsTrigger>
                     <TabsTrigger value="payment">💰 Payment</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="procurement">
-                    <ProcurementSection data={data.procurement_specifications} />
+                    <ProcurementSection
+                      data={data.procurement_specifications}
+                    />
                   </TabsContent>
                   <TabsContent value="eligibility">
                     <EligibilitySection data={data.eligibility_criteria} />
@@ -179,7 +191,10 @@ export function TenderOnePagerModal({
                   <h2 className="text-sm font-bold uppercase tracking-wide">
                     🛠️ Procurement specifications
                   </h2>
-                  <ProcurementSection data={data.procurement_specifications} plain />
+                  <ProcurementSection
+                    data={data.procurement_specifications}
+                    plain
+                  />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold uppercase tracking-wide">
@@ -194,8 +209,8 @@ export function TenderOnePagerModal({
                   <PaymentSection data={data.payment_terms} plain />
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  Generated {new Date(data.analyzed_at).toLocaleString("en-IN")}.
-                  AI-generated from the extracted tender text; verify against
+                  Generated {new Date(data.analyzed_at).toLocaleString("en-IN")}
+                  . AI-generated from the extracted tender text; verify against
                   the official tender document before bidding.
                 </p>
               </div>
@@ -244,10 +259,15 @@ function ProcurementSection({
   plain?: boolean;
 }) {
   return (
-    <div className={plain ? "mt-1 space-y-3 text-sm" : "mt-4 space-y-4 text-sm"}>
+    <div
+      className={plain ? "mt-1 space-y-3 text-sm" : "mt-4 space-y-4 text-sm"}
+    >
       <Field label="Scope of work" value={data.scope_of_work} />
       <ListField label="Key deliverables" items={data.key_deliverables} />
-      <Field label="Technical requirements" value={data.technical_requirements} />
+      <Field
+        label="Technical requirements"
+        value={data.technical_requirements}
+      />
     </div>
   );
 }
@@ -260,7 +280,9 @@ function EligibilitySection({
   plain?: boolean;
 }) {
   return (
-    <div className={plain ? "mt-1 space-y-3 text-sm" : "mt-4 space-y-4 text-sm"}>
+    <div
+      className={plain ? "mt-1 space-y-3 text-sm" : "mt-4 space-y-4 text-sm"}
+    >
       <Field label="Minimum turnover" value={data.minimum_turnover} />
       <Field
         label="Experience required"
@@ -270,7 +292,10 @@ function EligibilitySection({
             : `${data.experience_years} year${data.experience_years === 1 ? "" : "s"}`
         }
       />
-      <ListField label="Required certifications" items={data.required_certifications} />
+      <ListField
+        label="Required certifications"
+        items={data.required_certifications}
+      />
       <Field label="EMD amount & mode" value={data.emd_amount_and_mode} />
     </div>
   );
@@ -284,11 +309,19 @@ function PaymentSection({
   plain?: boolean;
 }) {
   return (
-    <div className={plain ? "mt-1 space-y-3 text-sm" : "mt-4 space-y-4 text-sm"}>
+    <div
+      className={plain ? "mt-1 space-y-3 text-sm" : "mt-4 space-y-4 text-sm"}
+    >
       <Field label="Payment schedule" value={data.payment_schedule} />
       <ListField label="Milestones" items={data.milestones} />
-      <Field label="Retention money %" value={data.retention_money_percentage} />
-      <Field label="Expected payment timeline" value={data.expected_payment_timeline} />
+      <Field
+        label="Retention money %"
+        value={data.retention_money_percentage}
+      />
+      <Field
+        label="Expected payment timeline"
+        value={data.expected_payment_timeline}
+      />
     </div>
   );
 }
@@ -320,7 +353,9 @@ function ListField({ label, items }: { label: string; items: string[] }) {
           ))}
         </ul>
       ) : (
-        <p className="mt-1 text-foreground">Not available in the tender record.</p>
+        <p className="mt-1 text-foreground">
+          Not available in the tender record.
+        </p>
       )}
     </div>
   );

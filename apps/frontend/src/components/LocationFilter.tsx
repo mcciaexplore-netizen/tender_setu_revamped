@@ -8,7 +8,10 @@ export interface LocationFilterValue {
   district: string | undefined;
 }
 
-const AUTHORITY_TABS: Array<{ label: string; value: AuthorityType | undefined }> = [
+const AUTHORITY_TABS: Array<{
+  label: string;
+  value: AuthorityType | undefined;
+}> = [
   { label: "All Tenders", value: undefined },
   { label: "State Government", value: "state" },
   { label: "Central Govt", value: "central" },
@@ -21,7 +24,7 @@ export function LocationFilter({
   value: LocationFilterValue;
   onChange: (next: LocationFilterValue) => void;
 }) {
-  const districts = value.state ? DISTRICTS_BY_STATE[value.state] ?? [] : [];
+  const districts = value.state ? (DISTRICTS_BY_STATE[value.state] ?? []) : [];
 
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3 text-sm">
@@ -64,7 +67,9 @@ export function LocationFilter({
 
       <select
         value={value.district ?? ""}
-        onChange={(event) => onChange({ ...value, district: event.target.value || undefined })}
+        onChange={(event) =>
+          onChange({ ...value, district: event.target.value || undefined })
+        }
         disabled={!value.state || districts.length === 0}
         className="rounded-md border border-input bg-background px-2 py-1 text-sm disabled:opacity-50"
       >

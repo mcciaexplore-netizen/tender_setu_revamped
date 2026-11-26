@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { getErrorMessage, type ApiRecord } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Pencil, Save, Loader2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/profile")({
 function ProfilePage() {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<ApiRecord>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -93,12 +94,12 @@ function ProfilePage() {
         if (teamResponse.ok) setTeam(await teamResponse.json());
         if (invitationsResponse.ok)
           setInvitations(await invitationsResponse.json());
-      } catch (err: any) {
+      } catch (err) {
         console.error("Profile fetch error:", err);
-        if (err.name === "AbortError") {
+        if (err instanceof Error && err.name === "AbortError") {
           setError("Request timed out. The server might be slow or down.");
         } else {
-          setError(err.message);
+          setError(getErrorMessage(err));
         }
       } finally {
         setLoading(false);
@@ -128,8 +129,8 @@ function ProfilePage() {
 
       if (!res.ok) throw new Error("Failed to save profile");
       setEditing(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -198,8 +199,8 @@ function ProfilePage() {
       if (!response.ok) throw new Error("Unable to upload this document.");
       const uploadedDocument = await response.json();
       setDocuments((items) => [uploadedDocument, ...items]);
-    } catch (cause: any) {
-      setError(cause.message);
+    } catch (cause) {
+      setError(getErrorMessage(cause));
     } finally {
       setUploading(false);
     }
@@ -268,8 +269,8 @@ function ProfilePage() {
       } catch {
         /* The selectable link remains available below. */
       }
-    } catch (cause: any) {
-      setError(cause.message || "Unable to create invitation.");
+    } catch (cause) {
+      setError(getErrorMessage(cause, "Unable to create invitation."));
     } finally {
       setInviting(false);
     }
@@ -668,7 +669,7 @@ function ProfilePage() {
                 </tr>
               </thead>
               <tbody>
-                {(profile.pastProjects || []).map((p: any) => (
+                {(profile.pastProjects || []).map((p: ApiRecord) => (
                   <tr key={p.name} className="border-t border-border">
                     <td className="px-3 py-2 font-medium text-foreground">
                       {p.name}
