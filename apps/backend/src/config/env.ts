@@ -1,11 +1,21 @@
+import path from 'path';
 import dotenv from 'dotenv';
 
+// Resolve .env relative to this file (apps/backend/.env) so the app starts
+// correctly no matter which folder it was cloned to or launched from.
+// dotenv never overrides variables that are already set, so a .env in the
+// current directory and real environment variables (CI, Vercel) still work.
+const backendEnvPath = path.resolve(__dirname, '../../.env');
+dotenv.config({ path: backendEnvPath });
 dotenv.config();
 
 function required(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) {
-    throw new Error(`${name} must be set before TenderMatch can start.`);
+    throw new Error(
+      `${name} must be set before TenderMatch can start. ` +
+        `Copy apps/backend/.env.example to ${backendEnvPath} and fill it in.`,
+    );
   }
   return value;
 }
